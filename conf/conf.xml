@@ -1,0 +1,19 @@
+<config>
+        <log_cfg_name>conf/log_conf.xml</log_cfg_name>
+        <mongo>
+                <server>127.0.0.1</server>
+                <port>27017</port>
+                <db>zt2_dev</db>
+                <page_limit>5</page_limit>
+        </mongo>
+        <redis>
+                <server>127.0.0.1</server>
+                <port>6379</port>
+                <max_idle>80</max_idle>
+                <max_active>12000</max_active>
+        </redis>
+        <server>
+                <host>0.0.0.0</host>
+                <port>8000</port>
+        </server>
+</config>
