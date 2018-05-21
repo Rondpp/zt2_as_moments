@@ -17,7 +17,7 @@ func GetSearchMoments(my_accid int64, keyword string, start_id string, limit_num
 
         selector := bson.M{"content" : bson.M{"$regex":keyword}}
         if start_id != "" {
-                selector = bson.M{"content" : bson.M{"$regex":keyword}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)}}
+                selector = bson.M{"content" : bson.M{"$regex":keyword}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
 
         var moment_mgo_list []MomentMgo
@@ -45,7 +45,7 @@ func GetSearchUsers(my_accid int64, keyword string, start_id string, limit_num i
         sUsers := mgohelper.GetCollection("users")
         selector := bson.M{"name" : bson.M{"$regex":keyword}}
         if start_id != "" {
-                selector = bson.M{"name" : bson.M{"$regex":keyword}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)}}
+                selector = bson.M{"name" : bson.M{"$regex":keyword}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
 
         var user_list []UserInfoMgo

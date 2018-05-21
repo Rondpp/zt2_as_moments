@@ -39,13 +39,22 @@ func GetCommentByID(comment_id string) *CommentMgo {
         return &comment_mgo
 }
 
-func GetMomentComment(my_accid int64, moment_id string) *[]proto.CommentRet {
+func GetMomentComment(my_accid int64, moment_id string, start_id string, limit_num int) *[]proto.CommentRet {
+        if limit_num == 0 {
+                limit_num = conf.GetCfg().MgoCfg.PageLimit
+        }
+
         log.Debug("获取动态的评论,moment_id:%s", moment_id)
         var comment_mgo_list []CommentMgo
+        selector := bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false}}
+
+        if start_id != "" {
+                selector = bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)}}
+        }
 
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
-        err := sComment.Find(bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false}}).All(&comment_mgo_list)
-        if err != nil && err != mgo.ErrNotFound {
+        err := sComment.Find(selector).Sort("time").Limit(limit_num).All(&comment_mgo_list)
+        if err != nil {
                 log.Error(err)
                 return nil
         }
@@ -60,12 +69,20 @@ func GetMomentComment(my_accid int64, moment_id string) *[]proto.CommentRet {
         return &rsp
 }
 
-func GetCommentComment(my_accid int64, comment_id string) *[]proto.CommentCommentRet {
+func GetCommentComment(my_accid int64, comment_id string, start_id string, limit_num int) *[]proto.CommentCommentRet {
+        if limit_num == 0 {
+                limit_num = conf.GetCfg().MgoCfg.PageLimit
+        }
+
         var comment_mgo_list []CommentMgo
 
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
         selector  := bson.M{"comment_id" : bson.ObjectIdHex(comment_id)}
-        err       := sComment.Find(selector).All(&comment_mgo_list)
+        if start_id != "" {
+                selector = bson.M{"comment_id":bson.ObjectIdHex(comment_id), "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)}}
+        }
+
+        err       := sComment.Find(selector).Sort("time").Limit(limit_num).All(&comment_mgo_list)
 
         if err != nil && err != mgo.ErrNotFound {
                 log.Error(err)
@@ -193,7 +210,7 @@ func UploadCommentRsp(r *http.Request) (interface {}, int)  {
         if req.MomentID != "" {
                 retcode := UploadMomentComment(my_accid, req) 
                 if retcode == proto.ReturnCodeOK {
-                        rsp := GetMomentComment(my_accid, req.MomentID)
+                        rsp := GetMomentComment(my_accid, req.MomentID, "", 0)
                         if rsp != nil {
                                 return rsp, proto.ReturnCodeOK
                         } else {
@@ -205,7 +222,7 @@ func UploadCommentRsp(r *http.Request) (interface {}, int)  {
         } else if req.CommentID != "" {
                 retcode := UploadCommentComment(my_accid, req)
                 if retcode == proto.ReturnCodeOK {
-                        rsp := GetCommentComment(my_accid, req.CommentID)
+                        rsp := GetCommentComment(my_accid, req.CommentID, "", 0)
                         if rsp != nil {
                                 return rsp, proto.ReturnCodeOK
                         } else {
@@ -223,10 +240,12 @@ func UploadCommentRsp(r *http.Request) (interface {}, int)  {
 func GetCommentRsp(r *http.Request) (interface {}, int)  {
         vars := r.URL.Query();
         my_accid    := GetMyAccID(r)
+        limit_num := GetIntUrlParmByName(r, "num")
+        start_id  := GetStartID(r)
  
         if len(vars["moment_id"]) > 0 {
                 moment_id := vars["moment_id"][0]
-                rsp := GetMomentComment(my_accid, moment_id)
+                rsp := GetMomentComment(my_accid, moment_id, start_id, limit_num)
                 if rsp != nil {
                         IncMomentReadNum(moment_id)
                         return rsp, proto.ReturnCodeOK
@@ -236,7 +255,7 @@ func GetCommentRsp(r *http.Request) (interface {}, int)  {
 
         } else if len(vars["comment_id"]) > 0 {
                 comment_id := vars["comment_id"][0]
-                rsp := GetCommentComment(my_accid, comment_id)
+                rsp := GetCommentComment(my_accid, comment_id, start_id, limit_num)
                 if rsp != nil {
                         return rsp, proto.ReturnCodeOK
                 } else {

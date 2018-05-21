@@ -18,6 +18,9 @@ func UploadFollowRsp(r *http.Request) (int)  {
         my_accid        := GetMyAccID(r)
         accid           := GetInt64UrlParmByName(r, "accid")
         sUsers          := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+        if my_accid == accid {
+                return proto.ReturnCodeParmWrong
+        }
 
         fans_selector    := bson.M{"accid":accid}
         fans_data        := bson.M{"$addToSet":bson.M{"fans":my_accid}}

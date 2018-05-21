@@ -20,7 +20,7 @@ func GetCommentMeRsp(my_accid int64, start_id string, limit_num int) *[]proto.Me
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
         selector := bson.M{"commented_accid":my_accid}
         if start_id != "" {
-                selector = bson.M{"commented_accid" : my_accid, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)}}
+                selector = bson.M{"commented_accid" : my_accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
 
         err := sComment.Find(selector).Sort("-time").Limit(limit_num).All(&comment_mgo_list)

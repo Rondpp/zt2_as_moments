@@ -7,6 +7,7 @@ const (
         ReturnCodeMissHeader    = 2
         ReturnCodeTokenWrong    = 3
         ReturnCodeTokenExpired  = 4
+        ReturnCodeParmWrong     = 5
 )
 
 var (
@@ -17,6 +18,7 @@ var (
                 ReturnCodeMissHeader    :   "缺少header",
                 ReturnCodeTokenWrong    :   "Token不对",
                 ReturnCodeTokenExpired  :   "Token过期",
+                ReturnCodeParmWrong     :   "参数错误",
         }
 )
 

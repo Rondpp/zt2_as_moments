@@ -12,6 +12,21 @@ import (
         "conf"
         "util"
 )
+func GetCommentNumByID(moment_id string) int {
+        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        selector := bson.M{"_id":  bson.ObjectIdHex(moment_id)}
+
+        type CommentInfo struct {
+                Num     int `bson:"comment_num"`
+        }
+        var commentinfo CommentInfo
+        err_comment_info := sMoments.Find(selector).Select(bson.M{"accid":1,"comment_num":1,"_id":0}).One(&commentinfo)
+        if err_comment_info != nil && err_comment_info != mgo.ErrNotFound {
+                log.Error(err_comment_info)
+        }
+        return commentinfo.Num
+}
+
 func GetMomentByID(moment_id string) *MomentMgo {
         var moment_mgo MomentMgo
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
@@ -35,7 +50,7 @@ func GetUserMoments(accid int64, start_id string, limit_num int) *[]MomentMgo {
         selector := bson.M{"accid" : accid}
 
         if start_id != "" {
-                selector = bson.M{"accid" : accid, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)}}
+                selector = bson.M{"accid" : accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
 
         err      := sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
@@ -58,19 +73,23 @@ func GetNotVideoMoments(sort_type int, start_id string, limit_num int) *[]Moment
         selector := bson.M{"video":bson.M{"$exists":false}}
 
         if start_id != "" {
-                selector = bson.M{"video":bson.M{"$exists":false}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)}}
+                comment_num := GetCommentNumByID(start_id)
+                selector = bson.M{"video":bson.M{"$exists":false}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"lte" :comment_num}}
         }
-
-        sort := "-time"
+        log.Debug(selector)
+        var err error
         if sort_type == 1 {
-                sort = "-comment_num"
+                err = sMoments.Find(selector).Sort("-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
+        } else {
+
+                err = sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
         }
-        err      := sMoments.Find(selector).Sort(sort).Limit(limit_num).All(&moment_mgo_list)
 
         if err != nil && err != mgo.ErrNotFound {
                 log.Error(err)
                 return nil
         }
+        log.Debug("查询非视频的动态:start_id:%s,limit_num:%d,count:%d", start_id, limit_num, len(moment_mgo_list))
         return &moment_mgo_list
 }
 
@@ -85,15 +104,17 @@ func GetVideoMoments(sort_type int, start_id string, limit_num int) *[]MomentMgo
         selector := bson.M{"video":bson.M{"$exists":true}}
 
         if start_id != "" {
-                selector = bson.M{"video":bson.M{"$exists":true}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)}}
+                comment_num := GetCommentNumByID(start_id)
+                selector = bson.M{"video":bson.M{"$exists":true}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"lte" :comment_num}}
         }
 
-        sort := "-time"
+        var err error
         if sort_type == 1 {
-                sort = "-comment_num"
-        }
+                err = sMoments.Find(selector).Sort("-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
+        } else {
 
-        err      := sMoments.Find(selector).Sort(sort).Limit(limit_num).All(&moment_mgo_list)
+                err = sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
+        }
 
         if err != nil && err != mgo.ErrNotFound {
                 log.Error(err)
@@ -124,7 +145,7 @@ func GetFollowUserMoments(my_accid int64, start_id string, limit_num int) *[]Mom
         sMoments            := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
         moment_selector     := bson.M{"accid":bson.M{"$in":follow_mgo.Follows}}
         if start_id != "" {
-                moment_selector = bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)}}
+                moment_selector = bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
 
         err_moment          := sMoments.Find(moment_selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
@@ -196,7 +217,7 @@ func UploadMomentRsp(r *http.Request) (*[]proto.MomentRet, int)  {
         return &rsp, proto.ReturnCodeOK
 }
 
-func  GetMomentRsp(r *http.Request) (*[]proto.MomentRet, int) {
+func  GetMomentRsp(r *http.Request) (interface {}, int) {
         vars := r.URL.Query();
 
         if CheckUrlParm(r , "type") != proto.ReturnCodeOK {
@@ -207,6 +228,7 @@ func  GetMomentRsp(r *http.Request) (*[]proto.MomentRet, int) {
         limit_num := GetIntUrlParmByName(r, "num")
         start_id  := GetStartID(r)
  
+        log.Debug("查询动态:my_accid:%d,limit_num:%d,start_id:%s", my_accid, limit_num, start_id)
         var moment_mgo_list *[]MomentMgo
 
         if vars["type"][0] == "0" {
@@ -221,7 +243,7 @@ func  GetMomentRsp(r *http.Request) (*[]proto.MomentRet, int) {
                 moment_mgo_list = GetUserMoments(query_accid, start_id, limit_num)
         } else if vars["type"][0] == "1" {
                 //查询最新动态
-                log.Debug("查询最新动态")
+                log.Debug("查询最新动态111")
                 sort_type := 0
                 if len(vars["sort_type"]) > 0 {
                         if vars["sort_type"][0] == "1" {
@@ -247,15 +269,13 @@ func  GetMomentRsp(r *http.Request) (*[]proto.MomentRet, int) {
 
                 moment_mgo_list = GetFollowUserMoments(my_accid, start_id, limit_num)
         } else if vars["type"][0] == "4"{
-                if CheckUrlParm(r , "moment_id") != proto.ReturnCodeOK {
+                if CheckUrlParm(r , "moment_id") != proto.ReturnCodeOK  || len(vars["moment_id"][0]) != 24{
                         return nil, proto.ReturnCodeMissParm
                 }
 
                 moment_mgo := GetMomentByID(vars["moment_id"][0])
-                var rsp []proto.MomentRet
-                var moment_ret proto.MomentRet
-                MomentMgoToRet(my_accid, moment_mgo, &moment_ret)
-                rsp = append(rsp, moment_ret)
+                var rsp proto.MomentRet
+                MomentMgoToRet(my_accid, moment_mgo, &rsp)
                 return &rsp, proto.ReturnCodeOK
 
         } else {
