@@ -226,7 +226,7 @@ func  GetMomentRsp(r *http.Request) (interface {}, int) {
 
         my_accid  := GetMyAccID(r)
         limit_num := GetIntUrlParmByName(r, "num")
-        start_id  := GetStartID(r)
+        start_id  := GetObjectIDByName(r, "start_id")
  
         log.Debug("查询动态:my_accid:%d,limit_num:%d,start_id:%s", my_accid, limit_num, start_id)
         var moment_mgo_list *[]MomentMgo

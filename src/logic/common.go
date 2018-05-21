@@ -86,10 +86,10 @@ func GetInt64UrlParmByName(r *http.Request, name string) int64 {
         return value
 }
 
-func GetStartID(r *http.Request) string {
+func GetObjectIDByName(r *http.Request, parm_name string) string {
         vars := r.URL.Query();
-        if len(vars["start_id"]) > 0 && len(vars["start_id"][0]) == 24 {
-                return vars["start_id"][0]
+        if len(vars[parm_name]) > 0 && len(vars[parm_name][0]) == 24 {
+                return vars[parm_name][0]
         }
         return ""
 }
@@ -178,20 +178,3 @@ func CommentCommentMgoToRet(my_accid int64, mgo *CommentMgo, ret *proto.CommentC
         UserInfoMgoToRet(my_accid, &userinfo_in_mgo, &userinforet)
         ret.User = userinforet
 }
-
-/*
-func CommentCommentMgoToRet(my_accid int64, mgo *CommentCommentMgo, ret *proto.CommentCommentRet) {
-        ret.CommentID   = mgo.CommentID
-        ret.Time        = mgo.Time
-        ret.Content     = mgo.Content
-
-        var userinfo_in_mgo UserInfoMgo
-
-        sUsers := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
-        sUsers.Find(bson.M{"accid": mgo.AccID}).One(&userinfo_in_mgo)
-
-        var userinforet  proto.UserInfoRet
-        UserInfoMgoToRet(my_accid, &userinfo_in_mgo, &userinforet)
-        ret.User = userinforet
-}
-*/

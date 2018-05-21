@@ -75,7 +75,7 @@ func GetSearchRsp(r *http.Request) (interface {}, int) {
         my_accid    := GetMyAccID(r)
         limit_num   := GetIntUrlParmByName(r, "num")
         keyword     := vars["keyword"][0]
-        start_id    := GetStartID(r)
+        start_id    := GetObjectIDByName(r, "start_id")
 
         if vars["type"][0] == "1" {
                 rsp := GetSearchMoments(my_accid, keyword, start_id, limit_num)

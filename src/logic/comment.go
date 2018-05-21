@@ -241,7 +241,7 @@ func GetCommentRsp(r *http.Request) (interface {}, int)  {
         vars := r.URL.Query();
         my_accid    := GetMyAccID(r)
         limit_num := GetIntUrlParmByName(r, "num")
-        start_id  := GetStartID(r)
+        start_id  := GetObjectIDByName(r, "start_id")
  
         if len(vars["moment_id"]) > 0 {
                 moment_id := vars["moment_id"][0]
