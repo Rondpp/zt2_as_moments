@@ -32,6 +32,11 @@ type Config struct {
         ServerCfg       ServerCfg       `xml:"server"`
         LogCfgName      string          `xml:"log_cfg_name"`
         TokenLastTime   uint32          `xml:"token_last_time"`
+        AdminUser       AdminUser       `xml:"admin_user"`
+}
+
+type AdminUser struct {
+        AccID int64 `xml:"accid"`
 }
 
 var (

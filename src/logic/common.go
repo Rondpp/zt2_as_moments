@@ -101,6 +101,7 @@ func GetIntUrlParmByName(r *http.Request, name string) int {
 
 func UserInfoMgoToRet(my_accid int64, userinfo_mgo *UserInfoMgo, userinfo_ret *proto.UserInfoRet) {
         userinfo_ret.AccID       = userinfo_mgo.AccID
+        userinfo_ret.Account     = userinfo_mgo.Account
         userinfo_ret.Name        = userinfo_mgo.Name
         userinfo_ret.FollowNum   = uint32(len(userinfo_mgo.Follows))
         userinfo_ret.FanNum      = uint32(len(userinfo_mgo.Fans))
@@ -108,6 +109,7 @@ func UserInfoMgoToRet(my_accid int64, userinfo_mgo *UserInfoMgo, userinfo_ret *p
         userinfo_ret.Avatar      = userinfo_mgo.Avatar
         userinfo_ret.Sex         = userinfo_mgo.Sex
         userinfo_ret.Birthday    = userinfo_mgo.Birthday
+        userinfo_ret.Permission  = userinfo_mgo.Permission
         for _, v := range userinfo_mgo.Fans {
                 if v == my_accid {
                         userinfo_ret.Followed = true

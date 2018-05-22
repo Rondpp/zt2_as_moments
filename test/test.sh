@@ -7,6 +7,9 @@ curl  -H "token:token10001" -H "accid:10001" -d '{"name":"英雄10001","avatar":
 #发布个人动态
 curl  -H "token:token10002" -H "accid:10002"  -d '{"content":"我的第一条动态","pic":["http://47.98.246.74:8001/pic/2.jpg","http://47.98.246.74:8001/pic/3.jpg"]}' http://47.98.246.74:8002/moments/
 
+#发布视频动态
+curl  -H "token:token10002" -H "accid:10002"  -d '{"content":"我的第一条动态","video":"https://zt2as.oss-cn-hangzhou.aliyuncs.com/abcd/qwe/vide-o4.mp4"}' http://47.98.246.74:8000/moments/
+
 #删除个人动态
 curl  -H "token:token10001" -H "accid:10001"  -X DELETE http://47.98.246.74:8002/moments/?moment_id=5aed8236e71e16138e1f57d8
 
@@ -54,3 +57,15 @@ curl   -H "token:token10002" -H "accid:10002"   "http://47.98.246.74:8002/commen
 
 #获取我相关的评论
 curl   -H "token:token10001" -H "accid:10001"   "http://47.98.246.74:8002/message/?type=1&start_id=&num=10"
+
+#删除我相关的评论
+curl   -H "token:token10001" -H "accid:10001"  -X DELETE  "http://47.98.246.74:8002/message/?type=1&id=5aeef754e71e163e45d6e83a"
+
+#设置权限
+curl   -H "token:token10000" -H "accid:10000"  -d '{"accid":10002, "account":"", "permissions":15}' "http://47.98.246.74:8000/admin/user/?"
+
+#获取管理员列表
+curl   -H "token:token10000" -H "accid:10000"  "http://47.98.246.74:8000/admin/user/?"
+
+#删除权限
+curl   -H "token:token10000" -H "accid:10000"  -X DELETE  "http://47.98.246.74:8000/admin/user/?accid=10002"

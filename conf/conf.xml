@@ -3,7 +3,7 @@
         <mongo>
                 <server>127.0.0.1</server>
                 <port>27017</port>
-                <db>zt2_dev</db>
+                <db>zt2</db>
                 <page_limit>5</page_limit>
         </mongo>
         <redis>
@@ -16,4 +16,7 @@
                 <host>0.0.0.0</host>
                 <port>8000</port>
         </server>
+        <admin_user>
+                <accid>10000</accid>
+        </admin_user>
 </config>

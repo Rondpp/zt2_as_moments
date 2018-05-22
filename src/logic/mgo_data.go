@@ -6,6 +6,7 @@ import (
 
 type UserInfoMgo struct {
         AccID       int64               `bson:"accid"`
+        Account     string              `bson:"account"`
         Name        string              `bson:"name"`
         Follows     []int64             `bson:"follows"`
         Fans        []int64             `bson:"fans"`
@@ -13,7 +14,8 @@ type UserInfoMgo struct {
         Avatar      string              `bson:"avatar"`
         Sex         int32               `bson:"sex"`
         Birthday    int64               `bson:"birthday"`
-        Type        uint32              `bons:"type"`
+        Type        uint32              `bson:"type"`
+        Permission  int64               `bson:"permission"`
 }
 
 type MomentMgo struct {

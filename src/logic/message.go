@@ -18,7 +18,7 @@ func GetCommentMeRsp(my_accid int64, start_id string, limit_num int) *[]proto.Me
         var comment_mgo_list []CommentMgo
 
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
-        selector := bson.M{"commented_accid":my_accid, "read":0}
+        selector := bson.M{"commented_accid":my_accid, "read":bson.M{"$ne": 1}}
         if start_id != "" {
                 selector = bson.M{"commented_accid" : my_accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
@@ -84,7 +84,7 @@ func DeleteMessageRsp(r *http.Request) int {
         id  := GetObjectIDByName(r, "id")
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
         selector := bson.M{"_id":bson.ObjectIdHex(id)}
-        data    := bson.M{"read": 1}
+        data     := bson.M{"$set":bson.M{"read": 1}}
 
         _, err := sComment.Upsert(selector, data)
         if err != nil {

@@ -34,12 +34,13 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 func  InitRouter() {
         router("/", IndexHandler)
         router("/moments/", MomentsHandler) // 发布动态，获取某人动态，获取最新动态
-        router("/user/", UserHandler) // 个人信息
-        router("/fans/", FansHandler) // 某人的粉丝
-        router("/follow/", FollowHandler) // 关注取关,某人关注的人
-        router("/like/", LikeHandler) // 点赞
-        router("/search/", SearchHandler) // 搜索
+        router("/user/", UserHandler)       // 个人信息
+        router("/fans/", FansHandler)       // 某人的粉丝
+        router("/follow/", FollowHandler)   // 关注取关,某人关注的人
+        router("/like/", LikeHandler)       // 点赞
+        router("/search/", SearchHandler)   // 搜索
         router("/comment/", CommentHandler) // 评论
         router("/message/", MessageHandler) // 评论
+        router("/admin/", AdminHandler)     // 管理
         log.Debug("InitRouter成功")
 }

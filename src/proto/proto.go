@@ -9,6 +9,7 @@ type Response struct {
 
 type UserInfoRet struct {
         AccID       int64       `json:"accid"`
+        Account     string      `json:"account"`
         Name        string      `json:"name"`
         FollowNum   uint32      `json:"follow_num"`
         FanNum      uint32      `json:"fan_num"`
@@ -18,5 +19,6 @@ type UserInfoRet struct {
         Birthday    int64       `json:"birthday"`
         Followed    bool        `json:"followd"`
         Type        uint32      `json:"type"`
+        Permission  int64       `json:"permission"` // 1官方发布 2删除动态评论 3禁言 4置顶
 }
 
