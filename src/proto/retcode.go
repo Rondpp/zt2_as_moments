@@ -8,6 +8,7 @@ const (
         ReturnCodeTokenWrong    = 3
         ReturnCodeTokenExpired  = 4
         ReturnCodeParmWrong     = 5
+        ReturnCodeNoPermission  = 6
 )
 
 var (
@@ -19,6 +20,7 @@ var (
                 ReturnCodeTokenWrong    :   "Token不对",
                 ReturnCodeTokenExpired  :   "Token过期",
                 ReturnCodeParmWrong     :   "参数错误",
+                ReturnCodeNoPermission  :   "没有权限",
         }
 )
 
