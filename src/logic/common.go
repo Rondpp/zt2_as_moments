@@ -180,3 +180,13 @@ func CommentCommentMgoToRet(my_accid int64, mgo *CommentMgo, ret *proto.CommentC
         UserInfoMgoToRet(my_accid, &userinfo_in_mgo, &userinforet)
         ret.User = userinforet
 }
+
+func GetPermissionByAccID(accid int64) int64 {
+        var userinfo_in_mgo UserInfoMgo
+        sUsers := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+        err := sUsers.Find(bson.M{"accid": accid}).One(&userinfo_in_mgo)
+        if err != nil {
+                log.Debug(err)
+        }
+        return userinfo_in_mgo.Permission
+}

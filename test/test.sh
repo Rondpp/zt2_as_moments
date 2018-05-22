@@ -62,10 +62,22 @@ curl   -H "token:token10001" -H "accid:10001"   "http://47.98.246.74:8002/messag
 curl   -H "token:token10001" -H "accid:10001"  -X DELETE  "http://47.98.246.74:8002/message/?type=1&id=5aeef754e71e163e45d6e83a"
 
 #设置权限
-curl   -H "token:token10000" -H "accid:10000"  -d '{"accid":10002, "account":"", "permissions":15}' "http://47.98.246.74:8000/admin/user/?"
+curl   -H "token:token10000" -H "accid:10000"  -d '{"accid":10002, "account":"", "permission":15}' "http://47.98.246.74:8000/admin/user/?"
 
 #获取管理员列表
 curl   -H "token:token10000" -H "accid:10000"  "http://47.98.246.74:8000/admin/user/?"
 
 #删除权限
 curl   -H "token:token10000" -H "accid:10000"  -X DELETE  "http://47.98.246.74:8000/admin/user/?accid=10002"
+
+#禁言
+curl   -H "token:token10002" -H "accid:10002"  -d '{"accid":10003, "time":1000}' "http://47.98.246.74:8000/admin/forbidden/?"
+
+#置顶
+curl   -H "token:token10002" -H "accid:10002"  -d '' "http://47.98.246.74:8000/admin/totop/?moment_id=5b03996ae71e16447a5bacc5"
+
+#删除动态
+curl   -H "token:token10002" -H "accid:10002"  -d '' "http://47.98.246.74:8000/admin/delete/?moment_id=5b03996ae71e16447a5bacc5"
+
+#删除评论
+curl   -H "token:token10002" -H "accid:10002"  -d '' "http://47.98.246.74:8000/admin/delete/?comment_id=5afd3d12e71e16741b960397"

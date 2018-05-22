@@ -6,6 +6,12 @@ type Response struct {
         Data interface{} `json:"data,omitempty"`
 }
 
+const (
+        PermissionOfficial  = 1 << 0 // 官方
+        PermissionDelete    = 1 << 1 // 删除
+        PermissionForbidden = 1 << 2 // 禁言
+        PermissionToTop     = 1 << 3 // 置顶
+)
 
 type UserInfoRet struct {
         AccID       int64       `json:"accid"`
