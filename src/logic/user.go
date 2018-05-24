@@ -12,12 +12,13 @@ import (
 )
 
 const DEFAULT_BIRTHDAY_TIME = int64(333907200000) // 1980年8月1号0点0分0秒0毫秒
+const DEFAULT_AVATAR_URL = "https://zt2as.oss-cn-hangzhou.aliyuncs.com/common/ic_avatar_default.png"
 
 func UploadDefaultUserInfo(accid int64) error{
         coll := mgohelper.GetCollection("users")
         selector := bson.M{"accid" : accid}
 
-        data := bson.M{"$set":bson.M{"name":"英雄" + strconv.FormatUint(uint64(accid), 10), "birthday": DEFAULT_BIRTHDAY_TIME}}
+        data := bson.M{"$set":bson.M{"name":"英雄" + strconv.FormatUint(uint64(accid), 10), "birthday": DEFAULT_BIRTHDAY_TIME,"avatar":DEFAULT_AVATAR_URL}}
         _,err := coll.Upsert(selector, data)
         if err != nil {
                 log.Error(err)
@@ -73,7 +74,7 @@ func  GetUserInfoRsp(r *http.Request) (*proto.UserInfoRet, int) {
                                 return nil, proto.ReturnCodeServerError
                         }
                 } else {
-                        return nil, proto.ReturnCodeServerError
+                        return nil, proto.ReturnCodeOK
                 }
         }
         return rsp, proto.ReturnCodeOK

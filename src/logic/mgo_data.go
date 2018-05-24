@@ -26,8 +26,10 @@ type MomentMgo struct {
         Pic             []string        `bson:"pic,omitempty"`
         Video           string          `bson:"video,omitempty"`
         ReadNum         uint32          `bson:"read_num"`
-        CommentNum       uint32         `bson:"comment_num"`
+        CommentNum      uint32          `bson:"comment_num"`
         Like            []uint32        `bson:"likes"`
+        Valid           int             `bson:"valid"`
+        ToTopTime       int64           `bson:"to_top_time"`
 }
 
 type FansInfoMgo struct {
@@ -48,16 +50,5 @@ type CommentMgo struct {
         CommentedAccID      int64                `bson:"commented_accid"`
         Like                []int64              `bson:"likes,omitempty"`
         CommentNum          uint32               `bson:"comment_num,omitempty"`
+        Valid               int                  `bson:"valid"`
 }
-/*
-type CommentCommentMgo struct {
-        CommentID      uint32    `bson:"comment_id"`
-        Time           int64     `bson:"time"`
-        Content        string    `bson:"content"`
-        AccID          uint32    `bson:"accid"`
-}
-
-type CommentCommentListMgo struct {
-        CommentComments []CommentCommentMgo `bson:"comments"`
-}
-*/

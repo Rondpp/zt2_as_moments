@@ -16,6 +16,13 @@ func UploadLikeRsp(r *http.Request) (int)  {
 
                 sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
                 selector := bson.M{"_id":  bson.ObjectIdHex(vars["moment_id"][0])}
+                var tmp interface {}
+                exists := sMoments.Find(selector).One(tmp)
+                if exists != nil {
+                        log.Debug(exists)
+                        return proto.ReturnCodeServerError
+                }
+
                 data     := bson.M{"$addToSet":bson.M{"likes":my_accid}}
                 _, err := sMoments.Upsert(selector, data)
                 if err != nil {
@@ -27,6 +34,15 @@ func UploadLikeRsp(r *http.Request) (int)  {
         } else if len(vars["comment_id"]) > 0 {
                 sComments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
                 selector := bson.M{"_id":  bson.ObjectIdHex(vars["comment_id"][0])}
+
+                var tmp interface {}
+                exists := sComments.Find(selector).One(tmp)
+                if exists != nil {
+                        log.Debug(exists)
+                        return proto.ReturnCodeServerError
+                }
+
+
                 data     := bson.M{"$addToSet":bson.M{"likes":my_accid}}
                 _, err := sComments.Upsert(selector, data)
                 if err != nil {
@@ -47,6 +63,15 @@ func  DeleteLikeRsp(r *http.Request) (int) {
 
                 sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
                 selector := bson.M{"_id":  bson.ObjectIdHex(vars["moment_id"][0])}
+
+                var tmp interface {}
+                exists := sMoments.Find(selector).One(tmp)
+                if exists != nil {
+                        log.Debug(exists)
+                        return proto.ReturnCodeServerError
+                }
+
+
                 data     := bson.M{"$pull":bson.M{"likes":my_accid}}
                 _, err := sMoments.Upsert(selector, data)
                 if err != nil {
@@ -58,6 +83,15 @@ func  DeleteLikeRsp(r *http.Request) (int) {
         } else if len(vars["comment_id"]) > 0 {
                 sComments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
                 selector := bson.M{"_id":  bson.ObjectIdHex(vars["comment_id"][0])}
+
+                var tmp interface {}
+                exists := sComments.Find(selector).One(tmp)
+                if exists != nil {
+                        log.Debug(exists)
+                        return proto.ReturnCodeServerError
+                }
+
+
                 data     := bson.M{"$pull":bson.M{"likes":my_accid}}
                 _, err := sComments.Upsert(selector, data)
                 if err != nil {

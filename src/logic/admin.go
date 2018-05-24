@@ -48,6 +48,9 @@ func UploadAdminUserRsp(r *http.Request) (int)  {
                 log.Debug("json err:%s", json_err)
                 return proto.ReturnCodeMissParm
         }
+        if req.AccID == conf.GetCfg().AdminUser.AccID {
+                return proto.ReturnCodeParmWrong
+        }
 
         selector    := bson.M{"accid" : req.AccID}
         data        := bson.M{"$set":bson.M{"permission":req.Permission}}
@@ -79,7 +82,7 @@ func UploadAdminForbiddenRsp(r *http.Request) (int)  {
         }
 
         selector    := bson.M{"accid" : req.AccID}
-        data        := bson.M{"$set":bson.M{"forbidden":req.Time}}
+        data        := bson.M{"$set":bson.M{"forbidden_last_time":req.Time,"forbidden_start_time":util.GetTimestamp()}}
         sUsers      := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
         _, err      := sUsers.Upsert(selector, data);
 
@@ -109,6 +112,26 @@ func UploadAdminToTopRsp(r *http.Request) (int)  {
         }
 
         log.Debug("置顶,moment_id:%d", moment_id)
+        return  proto.ReturnCodeOK
+}
+
+func DeleteAdminToTopRsp(r *http.Request) (int)  {
+        moment_id   := GetObjectIDByName(r, "moment_id")
+        if moment_id == "" {
+                return proto.ReturnCodeMissParm
+        }
+
+        selector    := bson.M{"_id" :bson.ObjectIdHex(moment_id)}
+        data        := bson.M{"$unset":bson.M{"to_top_time":1}}
+        sMoments    := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        _, err      := sMoments.Upsert(selector, data);
+
+        if err != nil {
+                log.Error(err)
+                return proto.ReturnCodeServerError
+        }
+
+        log.Debug("取消置顶,moment_id:%d", moment_id)
         return  proto.ReturnCodeOK
 }
 

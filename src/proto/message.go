@@ -8,4 +8,5 @@ type MessageCommentMeRet struct {
         MomentRet           MomentRet           `json:"moment"`
         CommentRet          CommentRet          `json:"comment,omitempty"`
         CommentCommentRet   CommentCommentRet   `json:"comment_comment,omitempty"`
+        Valid               int                 `json:"valid,omitempty"`
 }

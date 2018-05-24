@@ -110,6 +110,9 @@ func UserInfoMgoToRet(my_accid int64, userinfo_mgo *UserInfoMgo, userinfo_ret *p
         userinfo_ret.Sex         = userinfo_mgo.Sex
         userinfo_ret.Birthday    = userinfo_mgo.Birthday
         userinfo_ret.Permission  = userinfo_mgo.Permission
+        if userinfo_mgo.AccID == conf.GetCfg().AdminUser.AccID {
+                userinfo_ret.Type = 1
+        }
         for _, v := range userinfo_mgo.Fans {
                 if v == my_accid {
                         userinfo_ret.Followed = true
@@ -127,6 +130,7 @@ func MomentMgoToRet(my_accid int64, moment_mgo *MomentMgo, moment_ret * proto.Mo
         moment_ret.ReadNum      = moment_mgo.ReadNum
         moment_ret.CommentNum   = moment_mgo.CommentNum
         moment_ret.LikeNum      = uint32(len(moment_mgo.Like))
+        moment_ret.ToTopTime    = moment_mgo.ToTopTime
 
         var userinfo_in_mgo UserInfoMgo
         sUsers := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")

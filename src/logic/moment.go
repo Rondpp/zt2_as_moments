@@ -3,6 +3,7 @@ package logic
 import (
         "proto"
         "net/http"
+        "fmt"
         "encoding/json"
         "io/ioutil"
         log "github.com/jeanphorn/log4go"
@@ -11,7 +12,33 @@ import (
         mgohelper "mongo"
         "conf"
         "util"
+        "errors"
+        "time"
 )
+
+func CheckForbidden(r *http.Request) (int, error) {
+        my_accid    := GetMyAccID(r)
+        sUsers   := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+        selector   := bson.M{"accid": my_accid}
+
+        type ForbiddenInfo struct {
+                ForbiddenStartTime    int64 `bson:"forbidden_start_time"`
+                ForbiddenLastTime     int64 `bson:"forbidden_last_time"`
+        }
+        var forbiddeninfo ForbiddenInfo
+        err := sUsers.Find(selector).Select(bson.M{"forbidden_start_time":1, "forbidden_last_time":1,"_id":0}).One(&forbiddeninfo)
+        if err != nil && err != mgo.ErrNotFound {
+                log.Error(err)
+        }
+        now := util.GetTimestamp()
+        stop_forbidden_time := forbiddeninfo.ForbiddenLastTime + forbiddeninfo.ForbiddenStartTime
+        if  (forbiddeninfo.ForbiddenLastTime > 0) && (now < stop_forbidden_time) {
+                err_msg := fmt.Sprintf("您被禁言%s,将于%s后解除", util.FormatTimeCH(forbiddeninfo.ForbiddenLastTime),time.Unix(stop_forbidden_time/1000, 0).Format("2006-01-02 15:04:05"))
+                return proto.ReturnCodeForbidden, errors.New(err_msg)
+        }
+        return proto.ReturnCodeOK, nil
+}
+
 func GetCommentNumByID(moment_id string) int {
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
         selector := bson.M{"_id":  bson.ObjectIdHex(moment_id)}
@@ -31,8 +58,8 @@ func GetMomentByID(moment_id string) *MomentMgo {
         var moment_mgo MomentMgo
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
 
-        err := sMoments.Find(bson.M{"_id":bson.ObjectIdHex(moment_id)}).One(&moment_mgo)
-        if err != nil && err != mgo.ErrNotFound {
+        err := sMoments.Find(bson.M{"_id":bson.ObjectIdHex(moment_id), "valid":1}).One(&moment_mgo)
+        if err != nil {
                 log.Error(err)
                 return nil
         }
@@ -47,13 +74,13 @@ func GetUserMoments(accid int64, start_id string, limit_num int) *[]MomentMgo {
         var moment_mgo_list []MomentMgo
 
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-        selector := bson.M{"accid" : accid}
+        selector := bson.M{"accid" : accid, "valid": 1}
 
         if start_id != "" {
                 selector = bson.M{"accid" : accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
 
-        err      := sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
+        err      := sMoments.Find(selector).Sort("-to_top_time", "-time").Limit(limit_num).All(&moment_mgo_list)
 
         if err != nil && err != mgo.ErrNotFound {
                 log.Error(err)
@@ -70,7 +97,7 @@ func GetNotVideoMoments(sort_type int, start_id string, limit_num int) *[]Moment
         var moment_mgo_list []MomentMgo
 
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-        selector := bson.M{"video":bson.M{"$exists":false}}
+        selector := bson.M{"video":bson.M{"$exists":false}, "valid":1}
 
         if start_id != "" {
                 comment_num := GetCommentNumByID(start_id)
@@ -79,10 +106,10 @@ func GetNotVideoMoments(sort_type int, start_id string, limit_num int) *[]Moment
         log.Debug(selector)
         var err error
         if sort_type == 1 {
-                err = sMoments.Find(selector).Sort("-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
+                err = sMoments.Find(selector).Sort("-to_top_time","-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
         } else {
 
-                err = sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
+                err = sMoments.Find(selector).Sort("-to_top_time","-time").Limit(limit_num).All(&moment_mgo_list)
         }
 
         if err != nil && err != mgo.ErrNotFound {
@@ -101,7 +128,7 @@ func GetVideoMoments(sort_type int, start_id string, limit_num int) *[]MomentMgo
         var moment_mgo_list []MomentMgo
 
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-        selector := bson.M{"video":bson.M{"$exists":true}}
+        selector := bson.M{"video":bson.M{"$exists":true}, "valid":1}
 
         if start_id != "" {
                 comment_num := GetCommentNumByID(start_id)
@@ -110,10 +137,10 @@ func GetVideoMoments(sort_type int, start_id string, limit_num int) *[]MomentMgo
 
         var err error
         if sort_type == 1 {
-                err = sMoments.Find(selector).Sort("-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
+                err = sMoments.Find(selector).Sort("-to_top_time", "-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
         } else {
 
-                err = sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
+                err = sMoments.Find(selector).Sort("-to_top_time","-time").Limit(limit_num).All(&moment_mgo_list)
         }
 
         if err != nil && err != mgo.ErrNotFound {
@@ -143,12 +170,12 @@ func GetFollowUserMoments(my_accid int64, start_id string, limit_num int) *[]Mom
 
         var moment_mgo_list []MomentMgo
         sMoments            := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-        moment_selector     := bson.M{"accid":bson.M{"$in":follow_mgo.Follows}}
+        moment_selector     := bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "valid":1}
         if start_id != "" {
                 moment_selector = bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
 
-        err_moment          := sMoments.Find(moment_selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
+        err_moment          := sMoments.Find(moment_selector).Sort("-to_top_time", "-time").Limit(limit_num).All(&moment_mgo_list)
 
         if err_moment != nil && err_moment != mgo.ErrNotFound {
                 log.Error(err_moment)
@@ -187,6 +214,7 @@ func UploadMomentRsp(r *http.Request) (*[]proto.MomentRet, int)  {
         moments.ID = bson.NewObjectId()
         moments.Time = util.GetTimestamp()
         moments.CommentNum = 0 
+        moments.Valid = 1
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
         err := sMoments.Insert(&moments)
         if err != nil {
@@ -323,3 +351,5 @@ func  DeleteMomentRsp(r *http.Request) (int) {
         }
         return  proto.ReturnCodeOK
 }
+
+

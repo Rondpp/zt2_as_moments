@@ -3,12 +3,13 @@ package proto
 const (
         ReturnCodeServerError   = -1
         ReturnCodeOK            = 0
-        ReturnCodeMissParm      = 1
-        ReturnCodeMissHeader    = 2
-        ReturnCodeTokenWrong    = 3
-        ReturnCodeTokenExpired  = 4
-        ReturnCodeParmWrong     = 5
-        ReturnCodeNoPermission  = 6
+        ReturnCodeMissParm      = 2
+        ReturnCodeMissHeader    = 3
+        ReturnCodeTokenWrong    = 4
+        ReturnCodeTokenExpired  = 5
+        ReturnCodeParmWrong     = 6
+        ReturnCodeNoPermission  = 7
+        ReturnCodeForbidden     = 8
 )
 
 var (
@@ -21,6 +22,7 @@ var (
                 ReturnCodeTokenExpired  :   "Token过期",
                 ReturnCodeParmWrong     :   "参数错误",
                 ReturnCodeNoPermission  :   "没有权限",
+                ReturnCodeForbidden     :   "禁言中",
         }
 )
 

@@ -20,5 +20,6 @@ type MomentRet struct {
         LikeNum     uint32          `json:"like_num"`
         Liked       bool            `json:"liked"`
         User        UserInfoRet     `json:"user"`
+        ToTopTime   int64           `json:"to_top_time,omitempty"`
 }
 

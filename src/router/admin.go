@@ -29,6 +29,11 @@ func UploadAdminToTopHandler(w http.ResponseWriter, r *http.Request) {
         logic.SendResponse(w, logic.GetResponseWithCode(retcode, nil))
 }
 
+func DeleteAdminToTopHandler(w http.ResponseWriter, r *http.Request) {
+        retcode := logic.DeleteAdminToTopRsp(r)
+        logic.SendResponse(w, logic.GetResponseWithCode(retcode, nil))
+}
+
 func UploadAdminDeleteHandler(w http.ResponseWriter, r *http.Request) {
         retcode := logic.UploadAdminDeleteRsp(r)
         logic.SendResponse(w, logic.GetResponseWithCode(retcode, nil))
@@ -65,7 +70,11 @@ func AdminHandler(w http.ResponseWriter, r *http.Request) {
                         logic.SendResponse(w, logic.GetErrResponseWithCode(proto.ReturnCodeNoPermission))
                         return
                 }
-                UploadAdminToTopHandler(w, r)
+                if  r.Method == "POST" {
+                        UploadAdminToTopHandler(w, r)
+                } else if r.Method == "DELETE" {
+                        DeleteAdminToTopHandler(w, r)
+                }
         } else if strings.Index(r.RequestURI, "/admin/delete/") == 0 {
                 permission := logic.GetPermissionByAccID(my_accid)
                 if (permission & proto.PermissionDelete) != proto.PermissionDelete {

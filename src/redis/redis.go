@@ -4,7 +4,7 @@ import (
         log "github.com/jeanphorn/log4go"
         "conf"
         "proto"
-        "fmt"
+//        "fmt"
 )
 func init() {
         Pool = newRdsPool()//GetPool()
@@ -21,7 +21,7 @@ func newRdsPool() *redis.Pool {
                 Dial: func() (redis.Conn, error) {
                         c, err := redis.Dial("tcp", "localhost:27017")
                         if err != nil {
-                                fmt.Println(err.Error())
+//                                fmt.Println(err.Error())
                                 panic(err.Error())
                         }
                         return c, err

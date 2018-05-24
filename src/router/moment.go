@@ -16,6 +16,11 @@ func UploadMomentsHandler(w http.ResponseWriter, r *http.Request) {
          if ret != proto.ReturnCodeOK {
                  logic.SendResponse(w, logic.GetErrResponseWithCode(ret))
          } else {
+                 ret, err := logic.CheckForbidden(r)
+                 if ret != proto.ReturnCodeOK {
+                         logic.SendResponse(w, logic.GetErrResponseWithCodeMsg(ret,err.Error()))
+                         return
+                 }
 
                  rsp, retcode := logic.UploadMomentRsp(r)
                  logic.SendResponse(w, logic.GetResponseWithCode(retcode, rsp))
@@ -23,7 +28,7 @@ func UploadMomentsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteMomentsHandler(w http.ResponseWriter, r *http.Request) {
-        ret := logic.CheckToken(r) 
+        ret := logic.CheckToken(r)
         if ret != proto.ReturnCodeOK {
                 logic.SendResponse(w, logic.GetErrResponseWithCode(ret))
         } else {

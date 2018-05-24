@@ -24,7 +24,7 @@ type UserInfoRet struct {
         Sex         int32       `json:"sex"`
         Birthday    int64       `json:"birthday"`
         Followed    bool        `json:"followd"`
-        Type        uint32      `json:"type"`
+        Type        uint32      `json:"type"`       // 1超级管理员
         Permission  int64       `json:"permission"` // 1官方发布 2删除动态评论 3禁言 4置顶
 }
 

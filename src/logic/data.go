@@ -21,6 +21,18 @@ func GetErrResponseWithCode(code int) string {
         return GetResponseWithCode(code, nil)
 }
 
+func GetErrResponseWithCodeMsg(code int, msg string) string {
+        responseEntity := proto.Response{
+                Code: code,
+                Msg : msg,
+        }
+        response, err := json.Marshal(responseEntity)
+        if err != nil {
+        }
+        return string(response)
+}
+
+
 func GetResponseWithCode(code int, data interface{}) string {
         if util.IsEmpty(data) {
                 data = nil
