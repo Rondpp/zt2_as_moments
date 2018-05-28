@@ -11,6 +11,7 @@ const (
         PermissionDelete    = 1 << 1 // 删除
         PermissionForbidden = 1 << 2 // 禁言
         PermissionToTop     = 1 << 3 // 置顶
+        PermissionCheck     = 1 << 4 // 审核
 )
 
 type UserInfoRet struct {

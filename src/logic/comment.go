@@ -29,7 +29,7 @@ func GetCommentByID(comment_id string) *CommentMgo {
         var comment_mgo CommentMgo
 
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
-        selector  := bson.M{"_id" : bson.ObjectIdHex(comment_id), "valid":1}
+        selector  := bson.M{"_id" : bson.ObjectIdHex(comment_id), "valid":proto.ValidOK}
         err       := sComment.Find(selector).One(&comment_mgo)
 
         if err != nil && err != mgo.ErrNotFound {
@@ -46,14 +46,14 @@ func GetMomentComment(my_accid int64, moment_id string, start_id string, limit_n
 
         log.Debug("获取动态的评论,moment_id:%s", moment_id)
         var comment_mgo_list []CommentMgo
-        selector := bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false},"valid":1}
+        selector := bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false},"valid":proto.ValidOK}
 
         if start_id != "" {
-                selector = bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id),"valid":1}}
+                selector = bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id),"valid":proto.ValidOK}}
         }
 
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
-        err := sComment.Find(selector).Sort("time").Limit(limit_num).All(&comment_mgo_list)
+        err := sComment.Find(selector).Sort("-time").Limit(limit_num).All(&comment_mgo_list)
         if err != nil {
                 log.Error(err)
                 return nil
@@ -77,12 +77,12 @@ func GetCommentComment(my_accid int64, comment_id string, start_id string, limit
         var comment_mgo_list []CommentMgo
 
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
-        selector  := bson.M{"comment_id" : bson.ObjectIdHex(comment_id), "valid":1}
+        selector  := bson.M{"comment_id" : bson.ObjectIdHex(comment_id), "valid":proto.ValidOK}
         if start_id != "" {
-                selector = bson.M{"comment_id":bson.ObjectIdHex(comment_id), "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)},"valid":1}
+                selector = bson.M{"comment_id":bson.ObjectIdHex(comment_id), "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)},"valid":proto.ValidOK}
         }
 
-        err       := sComment.Find(selector).Sort("time").Limit(limit_num).All(&comment_mgo_list)
+        err       := sComment.Find(selector).Sort("-time").Limit(limit_num).All(&comment_mgo_list)
 
         if err != nil && err != mgo.ErrNotFound {
                 log.Error(err)

@@ -39,6 +39,16 @@ func UploadAdminDeleteHandler(w http.ResponseWriter, r *http.Request) {
         logic.SendResponse(w, logic.GetResponseWithCode(retcode, nil))
 }
 
+func GetAdminMomentsHandler(w http.ResponseWriter, r *http.Request) {
+        data, retcode := logic.GetAdminMomentsRsp(r)
+        logic.SendResponse(w, logic.GetResponseWithCode(retcode, data))
+}
+
+func UploadAdminCheckMomentsHandler(w http.ResponseWriter, r *http.Request) {
+        retcode := logic.UploadAdminCheckMomentsRsp(r)
+        logic.SendResponse(w, logic.GetResponseWithCode(retcode, nil))
+}
+
 func AdminHandler(w http.ResponseWriter, r *http.Request) {
         ret := logic.CheckToken(r)
         if ret != proto.ReturnCodeOK {
@@ -82,5 +92,16 @@ func AdminHandler(w http.ResponseWriter, r *http.Request) {
                         return
                 }
                 UploadAdminDeleteHandler(w, r)
+        } else if strings.Index(r.RequestURI, "/admin/moments/") == 0 {
+                permission := logic.GetPermissionByAccID(my_accid)
+                if (permission & proto.PermissionDelete) != proto.PermissionCheck {
+                        logic.SendResponse(w, logic.GetErrResponseWithCode(proto.ReturnCodeNoPermission))
+                        return
+                }
+                if  r.Method == "GET" {
+                        GetAdminMomentsHandler(w, r)
+                } else if r.Method == "POST" {
+                        UploadAdminCheckMomentsHandler(w, r)
+                }
         }
 }

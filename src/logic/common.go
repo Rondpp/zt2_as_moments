@@ -122,6 +122,9 @@ func UserInfoMgoToRet(my_accid int64, userinfo_mgo *UserInfoMgo, userinfo_ret *p
 }
 
 func MomentMgoToRet(my_accid int64, moment_mgo *MomentMgo, moment_ret * proto.MomentRet) {
+        if moment_mgo == nil {
+                return
+        }
         moment_ret.ID           = moment_mgo.ID
         moment_ret.Content      = moment_mgo.Content
         moment_ret.Time         = moment_mgo.Time
@@ -131,6 +134,7 @@ func MomentMgoToRet(my_accid int64, moment_mgo *MomentMgo, moment_ret * proto.Mo
         moment_ret.CommentNum   = moment_mgo.CommentNum
         moment_ret.LikeNum      = uint32(len(moment_mgo.Like))
         moment_ret.ToTopTime    = moment_mgo.ToTopTime
+        moment_ret.Valid        = moment_mgo.Valid
 
         var userinfo_in_mgo UserInfoMgo
         sUsers := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
@@ -171,7 +175,7 @@ func CommentMgoToRet(my_accid int64, mgo *CommentMgo, ret *proto.CommentRet) {
 }
 
 func CommentCommentMgoToRet(my_accid int64, mgo *CommentMgo, ret *proto.CommentCommentRet) {
-        ret.CommentID   = mgo.CommentID
+        ret.CommentID   = mgo.ID
         ret.Time        = mgo.Time
         ret.Content     = mgo.Content
 

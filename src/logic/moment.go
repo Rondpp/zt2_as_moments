@@ -43,22 +43,41 @@ func GetCommentNumByID(moment_id string) int {
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
         selector := bson.M{"_id":  bson.ObjectIdHex(moment_id)}
 
-        type CommentInfo struct {
+        type MomentInfo struct {
                 Num     int `bson:"comment_num"`
         }
-        var commentinfo CommentInfo
-        err_comment_info := sMoments.Find(selector).Select(bson.M{"accid":1,"comment_num":1,"_id":0}).One(&commentinfo)
-        if err_comment_info != nil && err_comment_info != mgo.ErrNotFound {
-                log.Error(err_comment_info)
+        var momentinfo MomentInfo
+        err := sMoments.Find(selector).Select(bson.M{"accid":1,"comment_num":1,"_id":0}).One(&momentinfo)
+        if err != nil && err != mgo.ErrNotFound {
+                log.Error(err)
         }
-        return commentinfo.Num
+        return momentinfo.Num
 }
 
-func GetMomentByID(moment_id string) *MomentMgo {
+func GetOwnerByID(moment_id string) int64 {
+        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        selector := bson.M{"_id":  bson.ObjectIdHex(moment_id)}
+
+        type MomentInfo struct {
+                AccID     int64 `bson:"accid"`
+        }
+        var momentinfo MomentInfo
+        err := sMoments.Find(selector).Select(bson.M{"accid":1,"_id":0}).One(&momentinfo)
+        if err != nil && err != mgo.ErrNotFound {
+                log.Error(err)
+        }
+        return momentinfo.AccID
+}
+
+func GetMomentByID(moment_id string, self bool) *MomentMgo {
         var moment_mgo MomentMgo
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-
-        err := sMoments.Find(bson.M{"_id":bson.ObjectIdHex(moment_id), "valid":1}).One(&moment_mgo)
+        var err error
+        if self {
+                err = sMoments.Find(bson.M{"_id":bson.ObjectIdHex(moment_id), "$or":[]bson.M{bson.M{"valid":proto.ValidOK},bson.M{"valid":proto.ValidWaitForCheck}}}).One(&moment_mgo)
+        } else {
+                err = sMoments.Find(bson.M{"_id":bson.ObjectIdHex(moment_id), "valid":proto.ValidOK}).One(&moment_mgo)
+        }
         if err != nil {
                 log.Error(err)
                 return nil
@@ -66,7 +85,7 @@ func GetMomentByID(moment_id string) *MomentMgo {
         return &moment_mgo
 }
 
-func GetUserMoments(accid int64, start_id string, limit_num int) *[]MomentMgo {
+func GetUserMoments(my_accid int64, query_accid int64, start_id string, limit_num int) *[]MomentMgo {
         if limit_num == 0 {
                 limit_num = conf.GetCfg().MgoCfg.PageLimit
         }
@@ -74,10 +93,21 @@ func GetUserMoments(accid int64, start_id string, limit_num int) *[]MomentMgo {
         var moment_mgo_list []MomentMgo
 
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-        selector := bson.M{"accid" : accid, "valid": 1}
 
+        var selector interface {}
         if start_id != "" {
-                selector = bson.M{"accid" : accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                if my_accid == query_accid  {
+                        selector = bson.M{"accid" : query_accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "$or":[]bson.M{bson.M{"valid":proto.ValidOK},bson.M{"valid":proto.ValidWaitForCheck}}}
+                } else {
+                        selector = bson.M{"accid" : query_accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "valid":proto.ValidOK}
+                }
+
+        } else {
+                if my_accid == query_accid {
+                        selector = bson.M{"accid" : query_accid, "$or":[]bson.M{bson.M{"valid":proto.ValidOK},bson.M{"valid":proto.ValidWaitForCheck}}}
+                } else {
+                        selector = bson.M{"accid" : query_accid, "valid":proto.ValidOK}
+                }
         }
 
         err      := sMoments.Find(selector).Sort("-to_top_time", "-time").Limit(limit_num).All(&moment_mgo_list)
@@ -86,6 +116,7 @@ func GetUserMoments(accid int64, start_id string, limit_num int) *[]MomentMgo {
                 log.Error(err)
                 return nil
         }
+        log.Debug(selector)
         return &moment_mgo_list
 }
 
@@ -97,7 +128,7 @@ func GetNotVideoMoments(sort_type int, start_id string, limit_num int) *[]Moment
         var moment_mgo_list []MomentMgo
 
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-        selector := bson.M{"video":bson.M{"$exists":false}, "valid":1}
+        selector := bson.M{"video":bson.M{"$exists":false}, "valid":proto.ValidOK}
 
         if start_id != "" {
                 comment_num := GetCommentNumByID(start_id)
@@ -128,7 +159,7 @@ func GetVideoMoments(sort_type int, start_id string, limit_num int) *[]MomentMgo
         var moment_mgo_list []MomentMgo
 
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-        selector := bson.M{"video":bson.M{"$exists":true}, "valid":1}
+        selector := bson.M{"video":bson.M{"$exists":true}, "valid":proto.ValidOK}
 
         if start_id != "" {
                 comment_num := GetCommentNumByID(start_id)
@@ -170,7 +201,7 @@ func GetFollowUserMoments(my_accid int64, start_id string, limit_num int) *[]Mom
 
         var moment_mgo_list []MomentMgo
         sMoments            := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-        moment_selector     := bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "valid":1}
+        moment_selector     := bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "valid":proto.ValidOK}
         if start_id != "" {
                 moment_selector = bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
@@ -214,7 +245,11 @@ func UploadMomentRsp(r *http.Request) (*[]proto.MomentRet, int)  {
         moments.ID = bson.NewObjectId()
         moments.Time = util.GetTimestamp()
         moments.CommentNum = 0 
-        moments.Valid = 1
+        if len(req.Video) > 0 {
+                moments.Valid = proto.ValidWaitForCheck
+        } else {
+                moments.Valid = proto.ValidOK
+        }
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
         err := sMoments.Insert(&moments)
         if err != nil {
@@ -231,7 +266,7 @@ func UploadMomentRsp(r *http.Request) (*[]proto.MomentRet, int)  {
                 log.Error(err)
                 return nil,proto.ReturnCodeServerError
         }
-        moment_mgo := GetMomentByID(moments.ID.Hex())
+        moment_mgo := GetMomentByID(moments.ID.Hex(), true)
         if moment_mgo == nil {
                 return nil, proto.ReturnCodeServerError
         }
@@ -268,10 +303,10 @@ func  GetMomentRsp(r *http.Request) (interface {}, int) {
                 }
 
                 query_accid := GetInt64UrlParmByName(r, "accid")
-                moment_mgo_list = GetUserMoments(query_accid, start_id, limit_num)
+                moment_mgo_list = GetUserMoments(my_accid, query_accid, start_id, limit_num)
         } else if vars["type"][0] == "1" {
                 //查询最新动态
-                log.Debug("查询最新动态111")
+                log.Debug("查询最新动态")
                 sort_type := 0
                 if len(vars["sort_type"]) > 0 {
                         if vars["sort_type"][0] == "1" {
@@ -301,7 +336,11 @@ func  GetMomentRsp(r *http.Request) (interface {}, int) {
                         return nil, proto.ReturnCodeMissParm
                 }
 
-                moment_mgo := GetMomentByID(vars["moment_id"][0])
+                moment_mgo := GetMomentByID(vars["moment_id"][0], false)
+                if moment_mgo == nil {
+                        return nil, proto.ReturnCodeOK
+                }
+
                 var rsp proto.MomentRet
                 MomentMgoToRet(my_accid, moment_mgo, &rsp)
                 return &rsp, proto.ReturnCodeOK
@@ -332,11 +371,12 @@ func  DeleteMomentRsp(r *http.Request) (int) {
         my_accid    := GetMyAccID(r)
         vars        := r.URL.Query();
 
-        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
-
-        remove_err := sMoments.Remove(bson.M{"_id":bson.ObjectIdHex(vars["moment_id"][0]),"accid":my_accid})
-        if remove_err != nil {
-                log.Error(remove_err)
+        sMoments        := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        moment_selector := bson.M{"_id":bson.ObjectIdHex(vars["moment_id"][0]),"accid":my_accid}
+        moment_data     := bson.M{"$set":bson.M{"valid":proto.ValidDeleteByMe}}
+        _, moment_err   := sMoments.Upsert(moment_selector, moment_data)
+        if moment_err != nil {
+                log.Error(moment_err)
                 return proto.ReturnCodeServerError
         }
 
