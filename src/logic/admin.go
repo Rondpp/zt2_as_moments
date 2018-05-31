@@ -138,8 +138,10 @@ func DeleteAdminToTopRsp(r *http.Request) (int)  {
 func UploadAdminDeleteRsp(r *http.Request) (int)  {
         moment_id   := GetObjectIDByName(r, "moment_id")
         comment_id  := GetObjectIDByName(r, "comment_id")
+        my_accid    := GetMyAccID(r)
         data        := bson.M{"$set":bson.M{"valid":proto.ValidDeleteByAdmin}}
-
+        var comment_mgo CommentMgo
+ 
         var coll *mgo.Collection
         var selector interface{}
         if moment_id != "" {
@@ -147,10 +149,18 @@ func UploadAdminDeleteRsp(r *http.Request) (int)  {
                 coll = mgohelper.GetCollection("moments")
                 log.Debug("管理员删除动态,moment_id:%d", moment_id)
 
+                comment_mgo.MomentID       = bson.ObjectIdHex(moment_id)
+                comment_mgo.CommentedAccID = GetMomentOwnerByID(moment_id)
+
         } else if comment_id != "" {
                 selector    = bson.M{"_id" :bson.ObjectIdHex(comment_id)}
                 coll = mgohelper.GetCollection("comments")
                 log.Debug("管理员删除评论,comment_id:%d", comment_id)
+
+                comment_mgo.MomentID       = GetMomentIDByCommentID(comment_id)
+                comment_mgo.CommentID      = bson.ObjectIdHex(comment_id)
+                comment_mgo.CommentedAccID = GetCommentOwnerByID(comment_id)
+
         } else {
                 return proto.ReturnCodeMissParm
         }
@@ -160,6 +170,21 @@ func UploadAdminDeleteRsp(r *http.Request) (int)  {
                 log.Error(err)
                 return proto.ReturnCodeServerError
         }
+
+        comment_mgo.Time            = util.GetTimestamp()
+        comment_mgo.Content         = "管理员删除"
+        comment_mgo.AccID           = my_accid
+        comment_mgo.ID              = bson.NewObjectId()
+        comment_mgo.Valid           = proto.ValidOK
+        comment_mgo.Type            = proto.MessageTypeAdmin
+
+        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        err_insert := sComment.Insert(&comment_mgo)
+        if err_insert != nil {
+                log.Error(err_insert)
+                return proto.ReturnCodeServerError
+        } 
+
         return  proto.ReturnCodeOK
 }
 
@@ -221,7 +246,7 @@ func  UploadAdminCheckMomentsRsp(r *http.Request) (int) {
                 log.Error(moment_err)
                 return proto.ReturnCodeServerError
         }
-        user_accid    := GetOwnerByID(moment_id)
+        user_accid    := GetMomentOwnerByID(moment_id)
 
         selector    := bson.M{"accid" : user_accid}
         data        := bson.M{"$pull":bson.M{"moments":bson.ObjectIdHex(moment_id)}}

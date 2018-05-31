@@ -13,6 +13,36 @@ import (
         "util"
 )
 
+func GetMomentIDByCommentID(comment_id string) bson.ObjectId {
+        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        selector := bson.M{"_id":  bson.ObjectIdHex(comment_id)}
+
+        type MomentInfo struct {
+                MomentID bson.ObjectId `bson:"moment_id"`
+        }
+        var momentinfo MomentInfo
+        err := sMoments.Find(selector).Select(bson.M{"moment_id":1,"_id":0}).One(&momentinfo)
+        if err != nil && err != mgo.ErrNotFound {
+                log.Error(err)
+        }
+        return momentinfo.MomentID
+}
+
+func GetCommentOwnerByID(comment_id string) int64 {
+        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        selector := bson.M{"_id":  bson.ObjectIdHex(comment_id)}
+
+        type MomentInfo struct {
+                AccID     int64 `bson:"accid"`
+        }
+        var momentinfo MomentInfo
+        err := sMoments.Find(selector).Select(bson.M{"accid":1,"_id":0}).One(&momentinfo)
+        if err != nil && err != mgo.ErrNotFound {
+                log.Error(err)
+        }
+        return momentinfo.AccID
+}
+
 func IncMomentReadNum(moment_id string) {
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
         selector := bson.M{"_id":  bson.ObjectIdHex(moment_id)}
@@ -32,7 +62,7 @@ func GetCommentByID(comment_id string) *CommentMgo {
         selector  := bson.M{"_id" : bson.ObjectIdHex(comment_id), "valid":proto.ValidOK}
         err       := sComment.Find(selector).One(&comment_mgo)
 
-        if err != nil && err != mgo.ErrNotFound {
+        if err != nil {
                 log.Error(err)
                 return nil
         }
@@ -49,7 +79,7 @@ func GetMomentComment(my_accid int64, moment_id string, start_id string, limit_n
         selector := bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false},"valid":proto.ValidOK}
 
         if start_id != "" {
-                selector = bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id),"valid":proto.ValidOK}}
+                selector = bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)},"valid":proto.ValidOK}
         }
 
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
@@ -130,7 +160,8 @@ func UploadMomentComment(my_accid int64, req proto.CommentReq) int {
         comment_mgo.AccID           = my_accid
         comment_mgo.ID              = bson.NewObjectId()
         comment_mgo.CommentedAccID  = commentinfo.AccID
-        comment_mgo.Valid           = 1
+        comment_mgo.Valid           = proto.ValidOK
+        comment_mgo.Type            = proto.MessageTypeUser
 
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
         err_insert := sComment.Insert(&comment_mgo)
@@ -177,7 +208,8 @@ func UploadCommentComment(my_accid int64, req proto.CommentReq) int  {
         comment_mgo.AccID           = my_accid
         comment_mgo.ID              = bson.NewObjectId()
         comment_mgo.CommentedAccID  = commentinfo.AccID
-        comment_mgo.Valid           = 1
+        comment_mgo.Valid           = proto.ValidOK
+        comment_mgo.Type            = proto.MessageTypeUser
 
 
         sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
@@ -236,17 +268,26 @@ func GetCommentRsp(r *http.Request) (interface {}, int)  {
         my_accid    := GetMyAccID(r)
         limit_num := GetIntUrlParmByName(r, "num")
         start_id  := GetObjectIDByName(r, "start_id")
- 
+
         if len(vars["moment_id"]) > 0 {
-                moment_id := vars["moment_id"][0]
+                moment_id := GetObjectIDByName(r, "moment_id")
+                if moment_id == "" {
+                        return nil, proto.ReturnCodeParmWrong
+                }
+
                 rsp := GetMomentComment(my_accid, moment_id, start_id, limit_num)
+
                 if rsp != nil {
                         IncMomentReadNum(moment_id)
                 }
                 return rsp, proto.ReturnCodeOK
 
         } else if len(vars["comment_id"]) > 0 {
-                comment_id := vars["comment_id"][0]
+                comment_id := GetObjectIDByName(r, "comment_id")
+                if comment_id == "" {
+                        return nil, proto.ReturnCodeParmWrong
+                }
+
                 rsp := GetCommentComment(my_accid, comment_id, start_id, limit_num)
                 return rsp, proto.ReturnCodeOK
 

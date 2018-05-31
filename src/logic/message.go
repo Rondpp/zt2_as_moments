@@ -33,29 +33,40 @@ func GetCommentMeRsp(my_accid int64, start_id string, limit_num int) *[]proto.Me
         for _, v := range comment_mgo_list {
                 var message_comment_me_ret proto.MessageCommentMeRet
                 message_comment_me_ret.ID = v.ID
+                moment_mgo := GetMomentByID(v.MomentID.Hex(), true)
+                if moment_mgo == nild {
+                        continue;
+                }
 
+                var comment_ret proto.CommentRet
                 if v.CommentID == "" {
-                        var comment_ret proto.CommentRet
                         CommentMgoToRet(my_accid, &v, &comment_ret)
-                        message_comment_me_ret.CommentRet = comment_ret
                 } else {
                         comment_mgo := GetCommentByID(v.CommentID.Hex())
+                        if comment_mgo == nil {
+                                continue;
+                        }
 
-                        var comment_ret proto.CommentRet
                         CommentMgoToRet(my_accid, comment_mgo, &comment_ret)
-                        message_comment_me_ret.CommentRet = comment_ret
 
 
                         var comment_comment_ret proto.CommentCommentRet
                         CommentCommentMgoToRet(my_accid, &v, &comment_comment_ret)
                         message_comment_me_ret.CommentCommentRet = comment_comment_ret
                 }
+                message_comment_me_ret.CommentRet = comment_ret
 
                 moment_mgo := GetMomentByID(v.MomentID.Hex(), true)
+
                 var moment_ret proto.MomentRet
                 MomentMgoToRet(my_accid, moment_mgo, &moment_ret)
                 message_comment_me_ret.MomentRet = moment_ret
                 message_comment_me_ret.Valid = v.Valid
+                if v.Type != 0 {
+                        message_comment_me_ret.Type = v.Type
+                } else {
+                        message_comment_me_ret.Type = proto.MessageTypeUser
+                }
 
                 rsp = append(rsp, message_comment_me_ret)
         }

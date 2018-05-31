@@ -51,4 +51,5 @@ type CommentMgo struct {
         Like                []int64              `bson:"likes,omitempty"`
         CommentNum          uint32               `bson:"comment_num,omitempty"`
         Valid               int                  `bson:"valid"`
+        Type                int                  `bson:"type"`
 }

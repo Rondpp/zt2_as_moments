@@ -26,6 +26,21 @@ func UploadDefaultUserInfo(accid int64) error{
         return err
 }
 
+func IsUserExists(accid int64) bool{
+
+        coll := mgohelper.GetCollection("users")
+        selector := bson.M{"accid" : accid}
+
+        var  data interface{}
+        err := coll.Find(selector).One(data)
+        if err != nil  {
+                log.Error(err)
+                return false
+        }
+
+        return true
+}
+
 func GetUserInfoRet(my_accid int64, accid int64) *proto.UserInfoRet{
 
         coll := mgohelper.GetCollection("users")

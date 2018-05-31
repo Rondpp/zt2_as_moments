@@ -3,7 +3,7 @@ package router
 import (
         "strings"
         "net/http"
-//        log "github.com/jeanphorn/log4go"
+        log "github.com/jeanphorn/log4go"
         "logic"
         "proto"
         "conf"
@@ -94,7 +94,8 @@ func AdminHandler(w http.ResponseWriter, r *http.Request) {
                 UploadAdminDeleteHandler(w, r)
         } else if strings.Index(r.RequestURI, "/admin/moments/") == 0 {
                 permission := logic.GetPermissionByAccID(my_accid)
-                if (permission & proto.PermissionDelete) != proto.PermissionCheck {
+                log.Debug("permission:%d,%d",permission,proto.PermissionCheck)
+                if (permission & proto.PermissionCheck) != proto.PermissionCheck {
                         logic.SendResponse(w, logic.GetErrResponseWithCode(proto.ReturnCodeNoPermission))
                         return
                 }

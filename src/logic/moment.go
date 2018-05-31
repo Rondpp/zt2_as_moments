@@ -54,7 +54,7 @@ func GetCommentNumByID(moment_id string) int {
         return momentinfo.Num
 }
 
-func GetOwnerByID(moment_id string) int64 {
+func GetMomentOwnerByID(moment_id string) int64 {
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
         selector := bson.M{"_id":  bson.ObjectIdHex(moment_id)}
 
@@ -74,7 +74,7 @@ func GetMomentByID(moment_id string, self bool) *MomentMgo {
         sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
         var err error
         if self {
-                err = sMoments.Find(bson.M{"_id":bson.ObjectIdHex(moment_id), "$or":[]bson.M{bson.M{"valid":proto.ValidOK},bson.M{"valid":proto.ValidWaitForCheck}}}).One(&moment_mgo)
+                err = sMoments.Find(bson.M{"_id":bson.ObjectIdHex(moment_id), "$or":[]bson.M{bson.M{"valid":proto.ValidOK},bson.M{"valid":proto.ValidWaitForCheck},bson.M{"valid":proto.ValidDeleteByAdmin}}}).One(&moment_mgo)
         } else {
                 err = sMoments.Find(bson.M{"_id":bson.ObjectIdHex(moment_id), "valid":proto.ValidOK}).One(&moment_mgo)
         }
@@ -131,8 +131,12 @@ func GetNotVideoMoments(sort_type int, start_id string, limit_num int) *[]Moment
         selector := bson.M{"video":bson.M{"$exists":false}, "valid":proto.ValidOK}
 
         if start_id != "" {
-                comment_num := GetCommentNumByID(start_id)
-                selector = bson.M{"video":bson.M{"$exists":false}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"lte" :comment_num}}
+                if sort_type == 1 {
+                        comment_num := GetCommentNumByID(start_id)
+                        selector = bson.M{"video":bson.M{"$exists":false}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"$lte" :comment_num}}
+                } else {
+                        selector = bson.M{"video":bson.M{"$exists":false}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                }
         }
         log.Debug(selector)
         var err error
@@ -162,8 +166,12 @@ func GetVideoMoments(sort_type int, start_id string, limit_num int) *[]MomentMgo
         selector := bson.M{"video":bson.M{"$exists":true}, "valid":proto.ValidOK}
 
         if start_id != "" {
-                comment_num := GetCommentNumByID(start_id)
-                selector = bson.M{"video":bson.M{"$exists":true}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"lte" :comment_num}}
+                if sort_type == 1 {
+                        comment_num := GetCommentNumByID(start_id)
+                        selector = bson.M{"video":bson.M{"$exists":true},  "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"$lte" :comment_num}}
+                } else {
+                        selector = bson.M{"video":bson.M{"$exists":true},  "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                }
         }
 
         var err error
@@ -203,7 +211,7 @@ func GetFollowUserMoments(my_accid int64, start_id string, limit_num int) *[]Mom
         sMoments            := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
         moment_selector     := bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "valid":proto.ValidOK}
         if start_id != "" {
-                moment_selector = bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                moment_selector = bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
         }
 
         err_moment          := sMoments.Find(moment_selector).Sort("-to_top_time", "-time").Limit(limit_num).All(&moment_mgo_list)
@@ -217,6 +225,7 @@ func GetFollowUserMoments(my_accid int64, start_id string, limit_num int) *[]Mom
 }
 
 func UploadMomentRsp(r *http.Request) (*[]proto.MomentRet, int)  {
+        log.Debug("玩家发布动态,method:%s,Host:%s,url:%s", r.Method, r.Host, r.URL)
 
         check_token := CheckToken(r)
         if check_token  != proto.ReturnCodeOK {
@@ -235,7 +244,15 @@ func UploadMomentRsp(r *http.Request) (*[]proto.MomentRet, int)  {
                 log.Debug("json err:%s", json_err)
                 return nil, proto.ReturnCodeMissParm
         }
+
+        if len(req.Content) == 0 {
+                return nil, proto.ReturnCodeMissParm
+        }
+
         my_accid    := GetMyAccID(r)
+        if !IsUserExists(my_accid)  {
+                UploadDefaultUserInfo(my_accid)
+        }
 
         var moments MomentMgo
         moments.AccID = my_accid
