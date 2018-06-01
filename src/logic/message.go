@@ -103,3 +103,17 @@ func DeleteMessageRsp(r *http.Request) int {
         }
         return proto.ReturnCodeOK
 }
+
+func HasUnReadMesssage(r *http.Request) (interface {}) {
+        var rsp proto.MessageHasUnRead
+        my_accid := GetMyAccID(r)
+        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        selector := bson.M{"commented_accid":my_accid, "read":bson.M{"$ne": 1}}
+        var data interface{}
+        err      := sComment.Find(selector).One(data)
+        if err != nil {
+                rsp.UnRead = false
+        }
+        rsp.UnRead = true
+        return &rsp
+}

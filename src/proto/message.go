@@ -15,3 +15,7 @@ type MessageCommentMeRet struct {
         Valid               int                 `json:"valid,omitempty"`
         Type                int                 `json:"type"`
 }
+
+type MessageHasUnRead struct {
+        UnRead              bool                 `json:"un_read"`
+}
