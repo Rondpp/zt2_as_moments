@@ -2,13 +2,13 @@
 curl  -H "token:token10001" -H "accid:10001" "http://47.98.246.74:8002/user/?accid=10001"
 
 #修改个人信息
-curl  -H "token:token10001" -H "accid:10001" -d '{"name":"英雄10001","avatar":"http://xxxx.xxx/", "sex":1,"birthday":1212141241}'  "http://47.98.246.74:8002/user/?accid=10001"
+curl  -H "token:token10001" -H "accid:10001" -d '{"name":"英雄10001","avatar":"https://zt2as.oss-cn-hangzhou.aliyuncs.com/image/2018-05-23/240603656/1527087249223-82FAA794-F50F-41B3-8BE3-5A92E0DEFADD.jpeg", "sex":1,"birthday":1212141241}'  "http://47.98.246.74:8002/user/?accid=10001"
 
 #发布个人动态
-curl  -H "token:token10002" -H "accid:10002"  -d '{"content":"我的第一条动态","pic":["http://47.98.246.74:8001/pic/2.jpg","http://47.98.246.74:8001/pic/3.jpg"]}' http://47.98.246.74:8002/moments/
+curl  -H "token:token10002" -H "accid:10002"  -d '{"content":"我的第一条动态","pic":["https://zt2as.oss-cn-hangzhou.aliyuncs.com/image/2018-05-23/240603656/1527087249223-82FAA794-F50F-41B3-8BE3-5A92E0DEFADD.jpeg","https://zt2as.oss-cn-hangzhou.aliyuncs.com/image/2018-05-23/240603656/1527087249227-D0B8F08E-5745-48C9-9662-5EA16A4FFEA9.jpeg"]}' http://47.98.246.74:8002/moments/
 
 #发布视频动态
-curl  -H "token:token10002" -H "accid:10002"  -d '{"content":"我的第一条动态","video":"https://zt2as.oss-cn-hangzhou.aliyuncs.com/abcd/qwe/vide-o4.mp4"}' http://47.98.246.74:8000/moments/
+curl  -H "token:token10002" -H "accid:10002"  -d '{"content":"我的第一条动态","video":"68c233deb5c64071b78d7acab4f61169"}' http://47.98.246.74:8000/moments/
 
 #删除个人动态
 curl  -H "token:token10001" -H "accid:10001"  -X DELETE http://47.98.246.74:8002/moments/?moment_id=5aed8236e71e16138e1f57d8
@@ -81,3 +81,10 @@ curl   -H "token:token10002" -H "accid:10002"  -d '' "http://47.98.246.74:8000/a
 
 #删除评论
 curl   -H "token:token10002" -H "accid:10002"  -d '' "http://47.98.246.74:8000/admin/delete/?comment_id=5afd3d12e71e16741b960397"
+
+
+#获取需要审核的视频列表
+curl  -H "token:token10002" -H "accid:10002"    "http://47.98.246.74:8000/admin/moments/?start_id=&num=10"
+
+#审核视频
+curl  -H "token:token10002" -H "accid:10002"  -d ''   "http://47.98.246.74:8000/admin/moments/?moment_id=5b0bb04be71e166d647636f7&pass=1"

@@ -34,7 +34,7 @@ func GetCommentMeRsp(my_accid int64, start_id string, limit_num int) *[]proto.Me
                 var message_comment_me_ret proto.MessageCommentMeRet
                 message_comment_me_ret.ID = v.ID
                 moment_mgo := GetMomentByID(v.MomentID.Hex(), true)
-                if moment_mgo == nild {
+                if moment_mgo == nil {
                         continue;
                 }
 
@@ -55,8 +55,6 @@ func GetCommentMeRsp(my_accid int64, start_id string, limit_num int) *[]proto.Me
                         message_comment_me_ret.CommentCommentRet = comment_comment_ret
                 }
                 message_comment_me_ret.CommentRet = comment_ret
-
-                moment_mgo := GetMomentByID(v.MomentID.Hex(), true)
 
                 var moment_ret proto.MomentRet
                 MomentMgoToRet(my_accid, moment_mgo, &moment_ret)
