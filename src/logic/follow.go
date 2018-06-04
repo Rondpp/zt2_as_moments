@@ -7,7 +7,6 @@ import (
         "gopkg.in/mgo.v2"
         "gopkg.in/mgo.v2/bson"
         mgohelper "mongo"
-        "conf"
 )
 
 func UploadFollowRsp(r *http.Request) (int)  {
@@ -17,7 +16,11 @@ func UploadFollowRsp(r *http.Request) (int)  {
 
         my_accid        := GetMyAccID(r)
         accid           := GetInt64UrlParmByName(r, "accid")
-        sUsers          := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sUsers          := mgohelper.GetCollection(session, "users")
         if my_accid == accid {
                 return proto.ReturnCodeParmWrong
         }
@@ -49,7 +52,11 @@ func  GetFollowRsp(r *http.Request) (*[]proto.UserInfoRet, int) {
 
         my_accid    := GetMyAccID(r)
         accid       := GetInt64UrlParmByName(r, "accid")
-        sUsers      := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sUsers      := mgohelper.GetCollection(session, "users")
 
 
         var follows FollowsInfoMgo
@@ -85,7 +92,11 @@ func  DeleteFollowRsp(r *http.Request) (int) {
 
         my_accid    := GetMyAccID(r)
         query_accid := GetInt64UrlParmByName(r, "accid")
-        sUsers := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sUsers := mgohelper.GetCollection(session, "users")
 
         fans_selector    := bson.M{"accid":query_accid}
         fans_data        := bson.M{"$pull":bson.M{"fans":my_accid}}

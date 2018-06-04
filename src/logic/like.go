@@ -6,15 +6,18 @@ import (
         log "github.com/jeanphorn/log4go"
         "gopkg.in/mgo.v2/bson"
         mgohelper "mongo"
-        "conf"
 )
 
 func UploadLikeRsp(r *http.Request) (int)  {
         vars := r.URL.Query();
         my_accid        := GetMyAccID(r)
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
         if len(vars["moment_id"]) > 0 {
 
-                sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+                sMoments := mgohelper.GetCollection(session, "moments")
                 selector := bson.M{"_id":  bson.ObjectIdHex(vars["moment_id"][0])}
                 var tmp interface {}
                 exists := sMoments.Find(selector).One(tmp)
@@ -32,7 +35,7 @@ func UploadLikeRsp(r *http.Request) (int)  {
                 log.Debug("玩家点赞动态,moment_id:%s,accid:%d", vars["moment_id"][0], my_accid)
 
         } else if len(vars["comment_id"]) > 0 {
-                sComments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+                sComments := mgohelper.GetCollection(session, "comments")
                 selector := bson.M{"_id":  bson.ObjectIdHex(vars["comment_id"][0])}
 
                 var tmp interface {}
@@ -59,9 +62,13 @@ func UploadLikeRsp(r *http.Request) (int)  {
 func  DeleteLikeRsp(r *http.Request) (int) {
         vars := r.URL.Query();
         my_accid        := GetMyAccID(r)
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
         if len(vars["moment_id"]) > 0 {
 
-                sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+                sMoments := mgohelper.GetCollection(session, "moments")
                 selector := bson.M{"_id":  bson.ObjectIdHex(vars["moment_id"][0])}
 
                 var tmp interface {}
@@ -81,7 +88,7 @@ func  DeleteLikeRsp(r *http.Request) (int) {
                 log.Debug("玩家取消点赞动态,moment_id:%s,accid:%d", vars["moment_id"][0], my_accid)
 
         } else if len(vars["comment_id"]) > 0 {
-                sComments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+                sComments := mgohelper.GetCollection(session, "comments")
                 selector := bson.M{"_id":  bson.ObjectIdHex(vars["comment_id"][0])}
 
                 var tmp interface {}

@@ -13,7 +13,11 @@ func GetSearchMoments(my_accid int64, keyword string, start_id string, limit_num
         if limit_num == 0 {
                 limit_num = conf.GetCfg().MgoCfg.PageLimit
         }
-        sMoments := mgohelper.GetCollection("moments")
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sMoments := mgohelper.GetCollection(session, "moments")
 
         selector := bson.M{"content" : bson.M{"$regex":keyword}}
         if start_id != "" {
@@ -42,7 +46,10 @@ func GetSearchUsers(my_accid int64, keyword string, start_id string, limit_num i
                 limit_num = conf.GetCfg().MgoCfg.PageLimit
         }
 
-        sUsers := mgohelper.GetCollection("users")
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sUsers := mgohelper.GetCollection(session, "users")
         selector := bson.M{"name" : bson.M{"$regex":keyword}}
         if start_id != "" {
                 selector = bson.M{"name" : bson.M{"$regex":keyword}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}

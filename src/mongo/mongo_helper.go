@@ -17,11 +17,16 @@ func GetSession() *mgo.Session {
                         log.Error(err)
                         panic(err) //直接终止程序运行
                 }
+                //最大连接池默认为4096
+                //Session.SetPoolLimit(1024)
         }
-        //最大连接池默认为4096
         return Session.Clone()
 }
 
-func GetCollection(col string) *mgo.Collection {
-        return GetSession().DB(conf.GetCfg().MgoCfg.DB).C(col)
+func GetCollection(session *mgo.Session,col string) *mgo.Collection {
+        if session == nil {
+            log.Error("session nil")
+            return nil
+        }
+        return session.DB(conf.GetCfg().MgoCfg.DB).C(col)
 }

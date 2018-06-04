@@ -15,7 +15,10 @@ const DEFAULT_BIRTHDAY_TIME = int64(333907200000) // 1980年8月1号0点0分0秒
 const DEFAULT_AVATAR_URL = "https://zt2as.oss-cn-hangzhou.aliyuncs.com/common/ic_avatar_default.png"
 
 func UploadDefaultUserInfo(accid int64) error{
-        coll := mgohelper.GetCollection("users")
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        coll := mgohelper.GetCollection(session, "users")
         selector := bson.M{"accid" : accid}
 
         data := bson.M{"$set":bson.M{"name":"英雄" + strconv.FormatUint(uint64(accid), 10), "birthday": DEFAULT_BIRTHDAY_TIME,"avatar":DEFAULT_AVATAR_URL}}
@@ -29,7 +32,10 @@ func UploadDefaultUserInfo(accid int64) error{
 
 func IsUserExists(accid int64) bool{
 
-        coll := mgohelper.GetCollection("users")
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        coll := mgohelper.GetCollection(session, "users")
         selector := bson.M{"accid" : accid}
 
         var  data interface{}
@@ -44,7 +50,10 @@ func IsUserExists(accid int64) bool{
 
 func GetUserInfoRet(my_accid int64, accid int64) *proto.UserInfoRet{
 
-        coll := mgohelper.GetCollection("users")
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        coll := mgohelper.GetCollection(session, "users")
         selector := bson.M{"accid" : accid}
 
         var req UserInfoMgo
@@ -111,7 +120,10 @@ func UpdateUserInfoRsp(r *http.Request) (*proto.UserInfoRet, int) {
         }
 
         my_accid    := GetMyAccID(r)
-        coll := mgohelper.GetCollection("users")
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        coll := mgohelper.GetCollection(session, "users")
 
         selector := bson.M{"accid":my_accid}
         data     := bson.M{"$set":bson.M{"avatar":req.Avatar, "sex":req.Sex, "birthday":req.Birthday, "name":req.Name}}

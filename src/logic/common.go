@@ -138,7 +138,11 @@ func MomentMgoToRet(my_accid int64, moment_mgo *MomentMgo, moment_ret * proto.Mo
         moment_ret.Valid        = moment_mgo.Valid
 
         var userinfo_in_mgo UserInfoMgo
-        sUsers := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+
+        session:= mgohelper.GetSession()
+        defer session.Close()
+
+        sUsers := mgohelper.GetCollection(session, "users")
         err := sUsers.Find(bson.M{"accid": moment_mgo.AccID}).One(&userinfo_in_mgo)
         if err != nil {
                 log.Debug(err)
@@ -167,7 +171,11 @@ func CommentMgoToRet(my_accid int64, mgo *CommentMgo, ret *proto.CommentRet) {
         }
 
         var userinfo_in_mgo UserInfoMgo
-        sUsers := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+
+        session:= mgohelper.GetSession()
+        defer session.Close()
+
+        sUsers := mgohelper.GetCollection(session, "users")
         sUsers.Find(bson.M{"accid": mgo.AccID}).One(&userinfo_in_mgo)
 
         var userinforet  proto.UserInfoRet
@@ -182,7 +190,10 @@ func CommentCommentMgoToRet(my_accid int64, mgo *CommentMgo, ret *proto.CommentC
 
         var userinfo_in_mgo UserInfoMgo
 
-        sUsers := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+        session:= mgohelper.GetSession()
+        defer session.Close()
+
+        sUsers := mgohelper.GetCollection(session, "users")
         sUsers.Find(bson.M{"accid": mgo.AccID}).One(&userinfo_in_mgo)
 
         var userinforet  proto.UserInfoRet
@@ -191,8 +202,11 @@ func CommentCommentMgoToRet(my_accid int64, mgo *CommentMgo, ret *proto.CommentC
 }
 
 func GetPermissionByAccID(accid int64) int64 {
+        session:= mgohelper.GetSession()
+        defer session.Close()
+
         var userinfo_in_mgo UserInfoMgo
-        sUsers := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+        sUsers := mgohelper.GetCollection(session, "users")
         err := sUsers.Find(bson.M{"accid": accid}).One(&userinfo_in_mgo)
         if err != nil {
                 log.Debug(err)

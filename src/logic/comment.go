@@ -14,7 +14,10 @@ import (
 )
 
 func GetMomentIDByCommentID(comment_id string) bson.ObjectId {
-        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        session  := mgohelper.GetSession()
+        defer session.Close()
+
+        sMoments := mgohelper.GetCollection(session, "comments")
         selector := bson.M{"_id":  bson.ObjectIdHex(comment_id)}
 
         type MomentInfo struct {
@@ -29,7 +32,10 @@ func GetMomentIDByCommentID(comment_id string) bson.ObjectId {
 }
 
 func GetCommentOwnerByID(comment_id string) int64 {
-        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        session  := mgohelper.GetSession()
+        defer session.Close()
+
+        sMoments := mgohelper.GetCollection(session, "comments")
         selector := bson.M{"_id":  bson.ObjectIdHex(comment_id)}
 
         type MomentInfo struct {
@@ -44,7 +50,10 @@ func GetCommentOwnerByID(comment_id string) int64 {
 }
 
 func IncMomentReadNum(moment_id string) {
-        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        session  := mgohelper.GetSession()
+        defer session.Close()
+
+        sMoments := mgohelper.GetCollection(session, "moments")
         selector := bson.M{"_id":  bson.ObjectIdHex(moment_id)}
 
         data := bson.M{"$inc": bson.M{"read_num":1}}
@@ -56,9 +65,12 @@ func IncMomentReadNum(moment_id string) {
 
 
 func GetCommentByID(comment_id string) *CommentMgo {
+        session  := mgohelper.GetSession()
+        defer session.Close()
+
         var comment_mgo CommentMgo
 
-        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        sComment := mgohelper.GetCollection(session, "comments")
         selector  := bson.M{"_id" : bson.ObjectIdHex(comment_id), "valid":proto.ValidOK}
         err       := sComment.Find(selector).One(&comment_mgo)
 
@@ -70,6 +82,9 @@ func GetCommentByID(comment_id string) *CommentMgo {
 }
 
 func GetMomentComment(my_accid int64, moment_id string, start_id string, limit_num int) *[]proto.CommentRet {
+        session  := mgohelper.GetSession()
+        defer session.Close()
+
         if limit_num == 0 {
                 limit_num = conf.GetCfg().MgoCfg.PageLimit
         }
@@ -82,7 +97,7 @@ func GetMomentComment(my_accid int64, moment_id string, start_id string, limit_n
                 selector = bson.M{"moment_id":bson.ObjectIdHex(moment_id),"comment_id":bson.M{"$exists":false}, "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)},"valid":proto.ValidOK}
         }
 
-        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        sComment := mgohelper.GetCollection(session, "comments")
         err := sComment.Find(selector).Sort("-time").Limit(limit_num).All(&comment_mgo_list)
         if err != nil {
                 log.Error(err)
@@ -100,13 +115,16 @@ func GetMomentComment(my_accid int64, moment_id string, start_id string, limit_n
 }
 
 func GetCommentComment(my_accid int64, comment_id string, start_id string, limit_num int) *[]proto.CommentCommentRet {
+        session  := mgohelper.GetSession()
+        defer session.Close()
+
         if limit_num == 0 {
                 limit_num = conf.GetCfg().MgoCfg.PageLimit
         }
 
         var comment_mgo_list []CommentMgo
 
-        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        sComment := mgohelper.GetCollection(session, "comments")
         selector  := bson.M{"comment_id" : bson.ObjectIdHex(comment_id), "valid":proto.ValidOK}
         if start_id != "" {
                 selector = bson.M{"comment_id":bson.ObjectIdHex(comment_id), "_id": bson.M{"$gt": bson.ObjectIdHex(start_id)},"valid":proto.ValidOK}
@@ -131,7 +149,10 @@ func GetCommentComment(my_accid int64, comment_id string, start_id string, limit
 func UploadMomentComment(my_accid int64, req proto.CommentReq) int {
         log.Debug("玩家评论动态")
 
-        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        session  := mgohelper.GetSession()
+        defer session.Close()
+
+        sMoments := mgohelper.GetCollection(session, "moments")
         selector := bson.M{"_id":  bson.ObjectIdHex(req.MomentID)}
 
         type CommentInfo struct {
@@ -163,7 +184,7 @@ func UploadMomentComment(my_accid int64, req proto.CommentReq) int {
         comment_mgo.Valid           = proto.ValidOK
         comment_mgo.Type            = proto.MessageTypeUser
 
-        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        sComment := mgohelper.GetCollection(session, "comments")
         err_insert := sComment.Insert(&comment_mgo)
         if err_insert != nil {
                 log.Error(err_insert)
@@ -176,7 +197,10 @@ func UploadMomentComment(my_accid int64, req proto.CommentReq) int {
 func UploadCommentComment(my_accid int64, req proto.CommentReq) int  {
         log.Debug("玩家评论评论,accid:%d,comment_id:%s", my_accid,req.CommentID)
 
-        sComments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        session  := mgohelper.GetSession()
+        defer session.Close()
+
+        sComments := mgohelper.GetCollection(session, "comments")
         selector := bson.M{"_id":  bson.ObjectIdHex(req.CommentID)}
 
         type CommentInfo struct {
@@ -212,7 +236,7 @@ func UploadCommentComment(my_accid int64, req proto.CommentReq) int  {
         comment_mgo.Type            = proto.MessageTypeUser
 
 
-        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        sComment := mgohelper.GetCollection(session, "comments")
         err_insert := sComment.Insert(&comment_mgo)
         if err_insert != nil {
                 log.Error(err_insert)

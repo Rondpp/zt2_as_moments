@@ -14,7 +14,11 @@ import (
 )
 
 func  GetAdminUserListRsp(r *http.Request) (*[]proto.UserInfoRet, int) {
-        coll := mgohelper.GetCollection("users")
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        coll := mgohelper.GetCollection(session, "users")
         selector := bson.M{"permission":bson.M{"$gt": 0}}
 
         var userinfo_mgo_list []UserInfoMgo
@@ -35,7 +39,7 @@ func  GetAdminUserListRsp(r *http.Request) (*[]proto.UserInfoRet, int) {
 }
 
 func UploadAdminUserRsp(r *http.Request) (int)  {
-
+        
         body, body_err := ioutil.ReadAll(r.Body)
         if body_err != nil {
                 log.Debug("body err:%s",body_err)
@@ -51,10 +55,12 @@ func UploadAdminUserRsp(r *http.Request) (int)  {
         if req.AccID == conf.GetCfg().AdminUser.AccID {
                 return proto.ReturnCodeParmWrong
         }
+        session     := mgohelper.GetSession()
+        defer session.Close()
 
         selector    := bson.M{"accid" : req.AccID}
         data        := bson.M{"$set":bson.M{"permission":req.Permission}}
-        sUsers      := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+        sUsers      := mgohelper.GetCollection(session, "users")
         _, err      := sUsers.Upsert(selector, data);
 
         if err != nil {
@@ -80,10 +86,12 @@ func UploadAdminForbiddenRsp(r *http.Request) (int)  {
                 log.Debug("json err:%s", json_err)
                 return proto.ReturnCodeMissParm
         }
+        session     := mgohelper.GetSession()
+        defer session.Close()
 
         selector    := bson.M{"accid" : req.AccID}
         data        := bson.M{"$set":bson.M{"forbidden_last_time":req.Time,"forbidden_start_time":util.GetTimestamp()}}
-        sUsers      := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+        sUsers      := mgohelper.GetCollection(session, "users")
         _, err      := sUsers.Upsert(selector, data);
 
         if err != nil {
@@ -100,10 +108,12 @@ func UploadAdminToTopRsp(r *http.Request) (int)  {
         if moment_id == "" {
                 return proto.ReturnCodeMissParm
         }
+        session     := mgohelper.GetSession()
+        defer session.Close()
 
         selector    := bson.M{"_id" :bson.ObjectIdHex(moment_id)}
         data        := bson.M{"$set":bson.M{"to_top_time":util.GetTimestamp()}}
-        sMoments    := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        sMoments    := mgohelper.GetCollection(session, "moments")
         _, err      := sMoments.Upsert(selector, data);
 
         if err != nil {
@@ -120,10 +130,12 @@ func DeleteAdminToTopRsp(r *http.Request) (int)  {
         if moment_id == "" {
                 return proto.ReturnCodeMissParm
         }
+        session     := mgohelper.GetSession()
+        defer session.Close()
 
         selector    := bson.M{"_id" :bson.ObjectIdHex(moment_id)}
         data        := bson.M{"$unset":bson.M{"to_top_time":1}}
-        sMoments    := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        sMoments    := mgohelper.GetCollection(session, "moments")
         _, err      := sMoments.Upsert(selector, data);
 
         if err != nil {
@@ -140,13 +152,17 @@ func UploadAdminDeleteRsp(r *http.Request) (int)  {
         comment_id  := GetObjectIDByName(r, "comment_id")
         my_accid    := GetMyAccID(r)
         data        := bson.M{"$set":bson.M{"valid":proto.ValidDeleteByAdmin}}
+
+        session     := mgohelper.GetSession()
+        defer session.Close()
+
         var comment_mgo CommentMgo
  
         var coll *mgo.Collection
         var selector interface{}
         if moment_id != "" {
                 selector    = bson.M{"_id" :bson.ObjectIdHex(moment_id)}
-                coll = mgohelper.GetCollection("moments")
+                coll = mgohelper.GetCollection(session, "moments")
                 log.Debug("管理员删除动态,moment_id:%d", moment_id)
 
                 comment_mgo.MomentID       = bson.ObjectIdHex(moment_id)
@@ -154,7 +170,7 @@ func UploadAdminDeleteRsp(r *http.Request) (int)  {
 
         } else if comment_id != "" {
                 selector    = bson.M{"_id" :bson.ObjectIdHex(comment_id)}
-                coll = mgohelper.GetCollection("comments")
+                coll = mgohelper.GetCollection(session, "comments")
                 log.Debug("管理员删除评论,comment_id:%d", comment_id)
 
                 comment_mgo.MomentID       = GetMomentIDByCommentID(comment_id)
@@ -178,7 +194,7 @@ func UploadAdminDeleteRsp(r *http.Request) (int)  {
         comment_mgo.Valid           = proto.ValidOK
         comment_mgo.Type            = proto.MessageTypeAdmin
 
-        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        sComment := mgohelper.GetCollection(session, "comments")
         err_insert := sComment.Insert(&comment_mgo)
         if err_insert != nil {
                 log.Error(err_insert)
@@ -199,7 +215,10 @@ func GetAdminMomentsRsp(r *http.Request) (interface {}, int) {
 
         var moment_mgo_list []MomentMgo
 
-        sMoments := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sMoments := mgohelper.GetCollection(session, "moments")
         selector := bson.M{"video":bson.M{"$exists":true}, "valid":proto.ValidWaitForCheck}
 
         if start_id != "" {
@@ -233,7 +252,10 @@ func  UploadAdminCheckMomentsRsp(r *http.Request) (int) {
 
         log.Debug("管理员:%d审核视频动态,moment_id:%d,pass:%d", my_accid, moment_id, pass)
 
-        sMoments        := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("moments")
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sMoments        := mgohelper.GetCollection(session, "moments")
         moment_selector := bson.M{"_id":bson.ObjectIdHex(moment_id)}
         var moment_data interface{}
         if pass == 0 {
@@ -250,7 +272,8 @@ func  UploadAdminCheckMomentsRsp(r *http.Request) (int) {
 
         selector    := bson.M{"accid" : user_accid}
         data        := bson.M{"$pull":bson.M{"moments":bson.ObjectIdHex(moment_id)}}
-        sUsers      := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("users")
+
+        sUsers      := mgohelper.GetCollection(session, "users")
 
         _,upsert_err  := sUsers.Upsert(selector, data);
         if upsert_err != nil {

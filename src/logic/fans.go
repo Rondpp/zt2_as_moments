@@ -13,7 +13,10 @@ func GetUserFansRsp(r *http.Request) (*[]proto.UserInfoRet, int){
         query_accid := GetInt64UrlParmByName(r, "accid")
         my_accid    := GetMyAccID(r)
 
-        sUsers   := mgohelper.GetCollection("users")
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sUsers   := mgohelper.GetCollection(session, "users")
         selector := bson.M{"accid" : query_accid}
         err      := sUsers.Find(selector).Select(bson.M{"fans":1,"_id":0}).One(&fans)
         if err != nil  && err != mgo.ErrNotFound {

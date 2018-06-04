@@ -17,7 +17,10 @@ func GetCommentMeRsp(my_accid int64, start_id string, limit_num int) *[]proto.Me
 
         var comment_mgo_list []CommentMgo
 
-        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sComment := mgohelper.GetCollection(session, "comments")
         selector := bson.M{"commented_accid":my_accid, "read":bson.M{"$ne": 1}}
         if start_id != "" {
                 selector = bson.M{"commented_accid" : my_accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
@@ -92,7 +95,11 @@ func GetMessageRsp(r *http.Request) (interface {}, int) {
 
 func DeleteMessageRsp(r *http.Request) int {
         id  := GetObjectIDByName(r, "id")
-        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sComment := mgohelper.GetCollection(session, "comments")
         selector := bson.M{"_id":bson.ObjectIdHex(id)}
         data     := bson.M{"$set":bson.M{"read": 1}}
 
@@ -107,7 +114,11 @@ func DeleteMessageRsp(r *http.Request) int {
 func HasUnReadMesssage(r *http.Request) (interface {}) {
         var rsp proto.MessageHasUnRead
         my_accid := GetMyAccID(r)
-        sComment := mgohelper.GetSession().DB(conf.GetCfg().MgoCfg.DB).C("comments")
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sComment := mgohelper.GetCollection(session, "comments")
         selector := bson.M{"commented_accid":my_accid, "read":bson.M{"$ne": 1}}
         var data interface{}
         err      := sComment.Find(selector).One(data)

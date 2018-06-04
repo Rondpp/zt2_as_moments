@@ -1,7 +1,6 @@
 package router
 
 import (
-        "fmt"
         "net/http"
         log "github.com/jeanphorn/log4go"
 )
@@ -28,7 +27,7 @@ func handleGlobalOptions(w http.ResponseWriter) {
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-        fmt.Println(w, "welcome to zt2")
+        w.Write([]byte("welcome to zt2"))
 }
 
 func  InitRouter() {
