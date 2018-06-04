@@ -23,6 +23,7 @@ func UploadDefaultUserInfo(accid int64) error{
         if err != nil {
                 log.Error(err)
         }
+        log.Debug("自动生成玩家信息:%d",accid)
         return err
 }
 

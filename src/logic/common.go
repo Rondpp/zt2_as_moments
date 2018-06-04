@@ -70,8 +70,9 @@ func GetMyAccID(r *http.Request) int64 {
                 return 0
         }
 
-        my_accid,err := strconv.ParseInt(r.Header["Accid"][0], 10, 32)
+        my_accid,err := strconv.ParseInt(r.Header["Accid"][0], 10, 64)
         if err != nil {
+                log.Error(err)
                 return 0
         }
         return my_accid
