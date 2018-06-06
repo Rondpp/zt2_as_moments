@@ -52,7 +52,7 @@ func UploadAdminUserRsp(r *http.Request) (int)  {
                 log.Debug("json err:%s", json_err)
                 return proto.ReturnCodeMissParm
         }
-        if req.AccID == conf.GetCfg().AdminUser.AccID {
+        if req.AccID == conf.GetCfg().AdminUser.AccID || req.AccID == 0{
                 return proto.ReturnCodeParmWrong
         }
         session     := mgohelper.GetSession()

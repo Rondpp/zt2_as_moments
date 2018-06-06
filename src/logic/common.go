@@ -33,12 +33,15 @@ func CheckUrlParm(r *http.Request, parms ...string) int {
 
 func CheckToken(r *http.Request) int {
         log.Debug("玩家header:accid:%s,token:%s", r.Header["Accid"], r.Header["Token"])
-        return proto.ReturnCodeOK
 
         if  len(r.Header["Accid"]) == 0 {
                 return proto.ReturnCodeMissHeader
         }
 
+
+        if  len(r.Header["Accid"][0]) == 0 || r.Header["Accid"][0] == "0" {
+                return proto.ReturnCodeMissHeader
+        }
 
         kvs, err := redishelper.HGetAll("app_token:" + r.Header["Accid"][0])
 
@@ -55,12 +58,14 @@ func CheckToken(r *http.Request) int {
         // token正确且在有效期内
         if   kvs["token"] != r.Header["Token"][0] {
                 retcode = proto.ReturnCodeTokenWrong
-        } else if   token_start_time + int64(conf.GetCfg().TokenLastTime) > now {
-                retcode = proto.ReturnCodeTokenWrong
         } else {
-                retcode = proto.ReturnCodeOK
+                if   token_start_time + int64(conf.GetCfg().TokenLastTime) < now {
+                        retcode = proto.ReturnCodeTokenWrong
+                } else {
+                        retcode = proto.ReturnCodeOK
+                }
         }
-        log.Debug("玩家token验证:%d:accid:%s,redis_token:%s,my_token:%s,token_start_time:%s, now:%d", retcode, r.Header["Accid"][0], kvs["token"],  r.Header["Token"][0], kvs["time"], now)
+        log.Debug("玩家token验证:ret:%d:accid:%s,redis_token:%s,my_token:%s,token_start_time:%s, now:%d,limit:%d", retcode, r.Header["Accid"][0], kvs["token"],  r.Header["Token"][0], kvs["time"], now, conf.GetCfg().TokenLastTime)
 
         return retcode
 }

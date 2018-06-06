@@ -1,5 +1,5 @@
 PID=`ps -ef|grep main|grep -v grep|awk '{print $2}'`
 if (($PID > 0)); then
-        kill $PID
+        kill -9 $PID
 fi
 nohup ./main &
