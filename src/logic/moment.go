@@ -16,6 +16,24 @@ import (
         "time"
 )
 
+func IsMomentExists(momentid bson.ObjectId) bool{
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        coll := mgohelper.GetCollection(session, "moments")
+        selector := bson.M{"_id" : momentid}
+
+        var  data interface{}
+        err := coll.Find(selector).One(data)
+        if err != nil  {
+                log.Error(err)
+                return false
+        }
+
+        return true
+}
+
 func CheckForbidden(r *http.Request) (int, error) {
         my_accid    := GetMyAccID(r)
 

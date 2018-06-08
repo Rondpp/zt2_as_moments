@@ -118,7 +118,7 @@ func UploadAdminForbiddenRsp(r *http.Request) (int)  {
         return  proto.ReturnCodeOK
 }
 
-func GetOldestToTopMomentID() string {
+func GetOldestToTopMomentID() (*bson.ObjectId) {
         // 如果有两条置顶的,顶替掉最老的
  
         session     := mgohelper.GetSession()
@@ -127,21 +127,21 @@ func GetOldestToTopMomentID() string {
         sMoments    := mgohelper.GetCollection(session, "moments")
 
         type MomentInfo struct {
-              ID string  `bson:"_id"`
+              ID bson.ObjectId  `bson:"_id"`
         }
         var moment_info_list []MomentInfo
 
         selector    := bson.M{"to_top_time" :bson.M{"$exists":true}}
-        err := sMoments.Find(selector).Sort("to_top_time").Select(bson.M{"_id":1}).One(moment_info_list)
+        err := sMoments.Find(selector).Sort("to_top_time").Select(bson.M{"_id":1}).All(&moment_info_list)
 
         if err != nil  && err != mgo.ErrNotFound {
                 log.Error(err)
-                return ""
+                return  nil
         }
         if len(moment_info_list) >= 2 {
-                return moment_info_list[len(moment_info_list) - 1].ID
+                return &moment_info_list[0].ID
         }
-        return ""
+        return nil
 }
 
 func UploadAdminToTopRsp(r *http.Request) (int)  {
@@ -149,13 +149,19 @@ func UploadAdminToTopRsp(r *http.Request) (int)  {
         if moment_id == "" {
                 return proto.ReturnCodeMissParm
         }
+
+        if !IsMomentExists(bson.ObjectIdHex(moment_id)) {
+                return proto.ReturnCodeParmWrong
+        }
+
         session     := mgohelper.GetSession()
         defer session.Close()
 
         // 如果有两条置顶的,顶替掉最老的
         old_id := GetOldestToTopMomentID()
-        if old_id != "" {
-                selector    := bson.M{"_id" :bson.ObjectIdHex(old_id)}
+        if old_id != nil {
+                log.Debug(old_id)
+                selector    := bson.M{"_id" :old_id}
                 data        := bson.M{"$unset":bson.M{"to_top_time":1}}
                 sMoments    := mgohelper.GetCollection(session, "moments")
                 _, err      := sMoments.Upsert(selector, data);
