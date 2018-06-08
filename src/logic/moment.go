@@ -110,13 +110,16 @@ func GetUserMoments(my_accid int64, query_accid int64, start_id string, limit_nu
 
         sMoments := mgohelper.GetCollection(session, "moments")
 
+       // 置顶只有2个,翻页没有置顶的
         var selector interface {}
+        var err error
         if start_id != "" {
                 if my_accid == query_accid  {
-                        selector = bson.M{"accid" : query_accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "$or":[]bson.M{bson.M{"valid":proto.ValidOK},bson.M{"valid":proto.ValidWaitForCheck}}}
+                        selector = bson.M{"accid" : query_accid, "to_top_time" :bson.M{"$exists":false}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "$or":[]bson.M{bson.M{"valid":proto.ValidOK},bson.M{"valid":proto.ValidWaitForCheck}}}
                 } else {
-                        selector = bson.M{"accid" : query_accid, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "valid":proto.ValidOK}
+                        selector = bson.M{"accid" : query_accid, "to_top_time" :bson.M{"$exists":false}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "valid":proto.ValidOK}
                 }
+                err      = sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
 
         } else {
                 if my_accid == query_accid {
@@ -124,9 +127,8 @@ func GetUserMoments(my_accid int64, query_accid int64, start_id string, limit_nu
                 } else {
                         selector = bson.M{"accid" : query_accid, "valid":proto.ValidOK}
                 }
+                err      = sMoments.Find(selector).Sort("-to_top_time", "-time").Limit(limit_num).All(&moment_mgo_list)
         }
-
-        err      := sMoments.Find(selector).Sort("-to_top_time", "-time").Limit(limit_num).All(&moment_mgo_list)
 
         if err != nil && err != mgo.ErrNotFound {
                 log.Error(err)
@@ -149,21 +151,23 @@ func GetNotVideoMoments(sort_type int, start_id string, limit_num int) *[]Moment
         sMoments := mgohelper.GetCollection(session, "moments")
         selector := bson.M{"video":bson.M{"$exists":false}, "valid":proto.ValidOK}
 
+        // 置顶只有2个,翻页没有置顶的
+        var err error
         if start_id != "" {
                 if sort_type == 1 {
                         comment_num := GetCommentNumByID(start_id)
-                        selector = bson.M{"video":bson.M{"$exists":false}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"$lte" :comment_num}}
+                        selector = bson.M{"video":bson.M{"$exists":false}, "to_top_time" :bson.M{"$exists":false}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"$lte" :comment_num}}
+                        err = sMoments.Find(selector).Sort("-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
                 } else {
-                        selector = bson.M{"video":bson.M{"$exists":false}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                        selector = bson.M{"video":bson.M{"$exists":false}, "to_top_time" :bson.M{"$exists":false}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                        err = sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
                 }
-        }
-        log.Debug(selector)
-        var err error
-        if sort_type == 1 {
-                err = sMoments.Find(selector).Sort("-to_top_time","-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
-        } else {
-
-                err = sMoments.Find(selector).Sort("-to_top_time","-time").Limit(limit_num).All(&moment_mgo_list)
+        } else  {
+                if sort_type == 1 {
+                        err = sMoments.Find(selector).Sort("-to_top_time","-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
+                } else {
+                        err = sMoments.Find(selector).Sort("-to_top_time","-time").Limit(limit_num).All(&moment_mgo_list)
+                }
         }
 
         if err != nil && err != mgo.ErrNotFound {
@@ -187,21 +191,25 @@ func GetVideoMoments(sort_type int, start_id string, limit_num int) *[]MomentMgo
         sMoments := mgohelper.GetCollection(session, "moments")
         selector := bson.M{"video":bson.M{"$exists":true}, "valid":proto.ValidOK}
 
+       // 置顶只有2个,翻页没有置顶的
+        var err error
         if start_id != "" {
                 if sort_type == 1 {
                         comment_num := GetCommentNumByID(start_id)
-                        selector = bson.M{"video":bson.M{"$exists":true},  "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"$lte" :comment_num}}
+                        selector = bson.M{"video":bson.M{"$exists":true}, "to_top_time" :bson.M{"$exists":false}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "comment_num":bson.M{"$lte" :comment_num}}
+                        err = sMoments.Find(selector).Sort("-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
+
                 } else {
-                        selector = bson.M{"video":bson.M{"$exists":true},  "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                        selector = bson.M{"video":bson.M{"$exists":true},  "to_top_time" :bson.M{"$exists":false}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                        err = sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
                 }
-        }
-
-        var err error
-        if sort_type == 1 {
-                err = sMoments.Find(selector).Sort("-to_top_time", "-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
         } else {
+                if sort_type == 1 {
+                        err = sMoments.Find(selector).Sort("-to_top_time", "-comment_num", "-time").Limit(limit_num).All(&moment_mgo_list)
+                } else {
 
-                err = sMoments.Find(selector).Sort("-to_top_time","-time").Limit(limit_num).All(&moment_mgo_list)
+                        err = sMoments.Find(selector).Sort("-to_top_time","-time").Limit(limit_num).All(&moment_mgo_list)
+                }
         }
 
         if err != nil && err != mgo.ErrNotFound {
@@ -235,11 +243,14 @@ func GetFollowUserMoments(my_accid int64, start_id string, limit_num int) *[]Mom
         var moment_mgo_list []MomentMgo
         sMoments            := mgohelper.GetCollection(session, "moments")
         moment_selector     := bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "valid":proto.ValidOK}
+       // 置顶只有2个,翻页没有置顶的
+       var err_moment error
         if start_id != "" {
-                moment_selector = bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                moment_selector = bson.M{"accid":bson.M{"$in":follow_mgo.Follows}, "to_top_time" :bson.M{"$exists":false}, "valid":proto.ValidOK, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}}
+                err_moment     = sMoments.Find(moment_selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
+        } else {
+                err_moment     = sMoments.Find(moment_selector).Sort("-to_top_time", "-time").Limit(limit_num).All(&moment_mgo_list)
         }
-
-        err_moment          := sMoments.Find(moment_selector).Sort("-to_top_time", "-time").Limit(limit_num).All(&moment_mgo_list)
 
         if err_moment != nil && err_moment != mgo.ErrNotFound {
                 log.Error(err_moment)

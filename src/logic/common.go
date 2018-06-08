@@ -34,6 +34,7 @@ func CheckUrlParm(r *http.Request, parms ...string) int {
 func CheckToken(r *http.Request) int {
         log.Debug("玩家header:accid:%s,token:%s", r.Header["Accid"], r.Header["Token"])
 
+
         if  len(r.Header["Accid"]) == 0 {
                 return proto.ReturnCodeMissHeader
         }
@@ -53,7 +54,7 @@ func CheckToken(r *http.Request) int {
         now := time.Now().Unix()
 
 
-        token_start_time,_ := strconv.ParseInt(kvs["time"], 10, 32)
+        token_start_time,_ := strconv.ParseInt(kvs["time"], 10, 64)
 
         // token正确且在有效期内
         if   kvs["token"] != r.Header["Token"][0] {

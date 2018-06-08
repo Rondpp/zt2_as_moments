@@ -2,16 +2,11 @@ package main
 
 import (
         log "github.com/jeanphorn/log4go"
-        "router"
         "net/http"
-        //"encoding/xml"
         "fmt"
-        //"io/ioutil"
         "flag"
-        //"gopkg.in/mgo.v2"
-        //mgohelper "mongo"
         "conf"
-        //redis "github.com/garyburd/redigo/redis"
+        "router"
 )
 
 func  main() {

@@ -11,6 +11,8 @@ import (
         "encoding/json"
         "conf"
         "util"
+        redishelper "redis"
+        "strconv"
 )
 
 func  GetAdminUserListRsp(r *http.Request) (*[]proto.UserInfoRet, int) {
@@ -39,7 +41,7 @@ func  GetAdminUserListRsp(r *http.Request) (*[]proto.UserInfoRet, int) {
 }
 
 func UploadAdminUserRsp(r *http.Request) (int)  {
-        
+        log.Debug("设置玩家权限")
         body, body_err := ioutil.ReadAll(r.Body)
         if body_err != nil {
                 log.Debug("body err:%s",body_err)
@@ -52,13 +54,26 @@ func UploadAdminUserRsp(r *http.Request) (int)  {
                 log.Debug("json err:%s", json_err)
                 return proto.ReturnCodeMissParm
         }
-        if req.AccID == conf.GetCfg().AdminUser.AccID || req.AccID == 0{
+        if req.AccID == conf.GetCfg().AdminUser.AccID || (req.AccID == 0 && len(req.Account) == 0){
                 return proto.ReturnCodeParmWrong
         }
         session     := mgohelper.GetSession()
         defer session.Close()
 
-        selector    := bson.M{"accid" : req.AccID}
+        accid  := req.AccID
+        if accid == 0 {
+                value, err := redishelper.HGet("account:" + req.Account, "accid")
+                if err != proto.ReturnCodeOK {
+                        return proto.ReturnCodeServerError
+                }
+                accid,_ = strconv.ParseInt(value, 10, 64)
+        }
+        if accid == 0 {
+               log.Error("accid = 0")
+               return proto.ReturnCodeParmWrong
+        }
+
+        selector    := bson.M{"accid" : accid}
         data        := bson.M{"$set":bson.M{"permission":req.Permission}}
         sUsers      := mgohelper.GetCollection(session, "users")
         _, err      := sUsers.Upsert(selector, data);
@@ -68,7 +83,7 @@ func UploadAdminUserRsp(r *http.Request) (int)  {
                 return proto.ReturnCodeServerError
         }
 
-        log.Debug("设置玩家权限,accid:%d,permission:%d", req.AccID, req.Permission)
+        log.Debug("设置玩家权限成功,account:%s,accid:%d,permission:%d", req.Account, accid, req.Permission)
         return  proto.ReturnCodeOK
 }
 
@@ -103,6 +118,32 @@ func UploadAdminForbiddenRsp(r *http.Request) (int)  {
         return  proto.ReturnCodeOK
 }
 
+func GetOldestToTopMomentID() string {
+        // 如果有两条置顶的,顶替掉最老的
+ 
+        session     := mgohelper.GetSession()
+        defer session.Close()
+
+        sMoments    := mgohelper.GetCollection(session, "moments")
+
+        type MomentInfo struct {
+              ID string  `bson:"_id"`
+        }
+        var moment_info_list []MomentInfo
+
+        selector    := bson.M{"to_top_time" :bson.M{"$exists":true}}
+        err := sMoments.Find(selector).Sort("to_top_time").Select(bson.M{"_id":1}).One(moment_info_list)
+
+        if err != nil  && err != mgo.ErrNotFound {
+                log.Error(err)
+                return ""
+        }
+        if len(moment_info_list) >= 2 {
+                return moment_info_list[len(moment_info_list) - 1].ID
+        }
+        return ""
+}
+
 func UploadAdminToTopRsp(r *http.Request) (int)  {
         moment_id   := GetObjectIDByName(r, "moment_id")
         if moment_id == "" {
@@ -110,6 +151,19 @@ func UploadAdminToTopRsp(r *http.Request) (int)  {
         }
         session     := mgohelper.GetSession()
         defer session.Close()
+
+        // 如果有两条置顶的,顶替掉最老的
+        old_id := GetOldestToTopMomentID()
+        if old_id != "" {
+                selector    := bson.M{"_id" :bson.ObjectIdHex(old_id)}
+                data        := bson.M{"$unset":bson.M{"to_top_time":1}}
+                sMoments    := mgohelper.GetCollection(session, "moments")
+                _, err      := sMoments.Upsert(selector, data);
+                if err != nil {
+                        log.Error(err)
+                        return proto.ReturnCodeServerError
+                }
+        }
 
         selector    := bson.M{"_id" :bson.ObjectIdHex(moment_id)}
         data        := bson.M{"$set":bson.M{"to_top_time":util.GetTimestamp()}}
@@ -221,11 +275,14 @@ func GetAdminMomentsRsp(r *http.Request) (interface {}, int) {
         sMoments := mgohelper.GetCollection(session, "moments")
         selector := bson.M{"video":bson.M{"$exists":true}, "valid":proto.ValidWaitForCheck}
 
+        // 置顶只有2个,翻页没有置顶的
+        var err error
         if start_id != "" {
-                selector = bson.M{"video":bson.M{"$exists":true}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "valid":proto.ValidWaitForCheck}
+                selector = bson.M{"video":bson.M{"$exists":true}, "to_top_time":bson.M{"$exists":false}, "_id": bson.M{"$lt": bson.ObjectIdHex(start_id)}, "valid":proto.ValidWaitForCheck}
+                err = sMoments.Find(selector).Sort("-time").Limit(limit_num).All(&moment_mgo_list)
+        } else {
+                err = sMoments.Find(selector).Sort("-to_top_time","-time").Limit(limit_num).All(&moment_mgo_list)
         }
-
-        err := sMoments.Find(selector).Sort("-to_top_time","-time").Limit(limit_num).All(&moment_mgo_list)
 
         if err != nil && err != mgo.ErrNotFound {
                 log.Error(err)

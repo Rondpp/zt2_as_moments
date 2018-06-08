@@ -35,7 +35,7 @@ func newRdsPool() *redis.Pool {
 func HGetAll(query string) (map[string]string, int32) {
         session := pool.Get()
         defer session.Close()
- 
+
         values, err := redis.StringMap(session.Do("HGETALL", query))
         if  err != nil {
                 log.Debug(err)
@@ -43,4 +43,16 @@ func HGetAll(query string) (map[string]string, int32) {
         }
 
         return values, proto.ReturnCodeOK
+}
+
+func HGet(query string, field string) (string, int32) {
+        session := pool.Get()
+        defer session.Close()
+
+        value, err := redis.String(session.Do("HGET", query, field))
+        if  err != nil {
+                log.Debug(err)
+                return "", proto.ReturnCodeServerError
+        }
+        return value, proto.ReturnCodeOK
 }

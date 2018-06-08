@@ -53,6 +53,7 @@ func AdminHandler(w http.ResponseWriter, r *http.Request) {
         ret := logic.CheckToken(r)
         if ret != proto.ReturnCodeOK {
                 logic.SendResponse(w, logic.GetErrResponseWithCode(ret))
+                return
         }
 
         my_accid := logic.GetMyAccID(r)
