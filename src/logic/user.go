@@ -12,7 +12,7 @@ import (
 )
 
 const DEFAULT_BIRTHDAY_TIME = int64(333907200000) // 1980年8月1号0点0分0秒0毫秒
-const DEFAULT_AVATAR_URL = "https://zt2as.oss-cn-hangzhou.aliyuncs.com/common/ic_avatar_default.png"
+const DEFAULT_AVATAR_URL = "https://zt2zs.oss-cn-hangzhou.aliyuncs.com/common/ic_avatar_default.png"
 
 func UploadDefaultUserInfo(accid int64) error{
         session := mgohelper.GetSession()

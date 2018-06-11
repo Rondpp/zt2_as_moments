@@ -7,6 +7,7 @@ import (
         "util"
 )
 func SendResponse(w http.ResponseWriter, data string) {
+        w.Header().Set("content-type", "application/json")
         w.Header().Set("Access-Control-Allow-Origin", "*")
         w.Header().Set("Access-Control-Allow-Headers", "*")
         w.Header().Set("Access-Control-Allow-Methods", "*")
