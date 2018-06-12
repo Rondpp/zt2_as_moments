@@ -292,7 +292,6 @@ func UploadMomentRsp(r *http.Request) (*[]proto.MomentRet, int)  {
                 log.Debug("body err:%s",body_err)
                 return nil, proto.ReturnCodeMissParm
         }
-        log.Debug("read")
         var req proto.PublishMomentReq
         json_err := json.Unmarshal(body, &req) 
         if json_err != nil {

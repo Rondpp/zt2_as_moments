@@ -88,9 +88,30 @@ func GetMessageRsp(r *http.Request) (interface {}, int) {
 
         if vars["type"][0] == "1" {
                 rsp:= GetCommentMeRsp(my_accid, start_id, limit_num)
+
+                if len(start_id) == 0 {
+                        SetRead(r)
+                }
                 return rsp, proto.ReturnCodeOK
         }
         return nil, proto.ReturnCodeMissParm
+}
+
+func SetRead(r *http.Request) {
+        my_accid := GetMyAccID(r)
+
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sComment := mgohelper.GetCollection(session, "comments")
+        selector := bson.M{"commented_accid":my_accid}
+        data     := bson.M{"$set":bson.M{"read": 1}}
+        _, err   := sComment.UpdateAll(selector, data)
+        if err != nil {
+                log.Error(err)
+        } else {
+                log.Debug("accid:%d已读了消息", my_accid)
+        }
 }
 
 func DeleteMessageRsp(r *http.Request) int {
@@ -124,7 +145,8 @@ func HasUnReadMesssage(r *http.Request) (interface {}) {
         err      := sComment.Find(selector).One(data)
         if err != nil {
                 rsp.UnRead = false
+        } else {
+                rsp.UnRead = true
         }
-        rsp.UnRead = true
         return &rsp
 }
