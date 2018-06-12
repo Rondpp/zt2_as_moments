@@ -61,6 +61,9 @@ curl   -H "token:token10001" -H "accid:10001"   "http://47.98.246.74:8002/messag
 #删除我相关的评论
 curl   -H "token:token10001" -H "accid:10001"  -X DELETE  "http://47.98.246.74:8002/message/?type=1&id=5aeef754e71e163e45d6e83a"
 
+#查询是否有未读消息
+curl   -H "token:token10001" -H "accid:10001"  "http://47.98.246.74:8002/message/unread?"
+
 #设置权限
 curl   -H "token:token10000" -H "accid:10000"  -d '{"accid":10002, "account":"", "permission":15}' "http://47.98.246.74:8000/admin/user/?"
 
