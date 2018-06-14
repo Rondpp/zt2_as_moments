@@ -97,6 +97,24 @@ func GetMomentOwnerByID(moment_id string) int64 {
         return momentinfo.AccID
 }
 
+func GetVideoByID(moment_id string) string {
+        session := mgohelper.GetSession()
+        defer session.Close()
+
+        sMoments := mgohelper.GetCollection(session, "moments")
+        selector := bson.M{"_id":  bson.ObjectIdHex(moment_id)}
+
+        type MomentInfo struct {
+                Video     string `bson:"video"`
+        }
+        var momentinfo MomentInfo
+        err := sMoments.Find(selector).Select(bson.M{"video":1,"_id":0}).One(&momentinfo)
+        if err != nil && err != mgo.ErrNotFound {
+                log.Error(err)
+        }
+        return momentinfo.Video
+}
+
 func GetMomentByID(moment_id string, self bool) *MomentMgo {
         session := mgohelper.GetSession()
         defer session.Close()
@@ -449,9 +467,14 @@ func  DeleteMomentRsp(r *http.Request) (int) {
 
         session  := mgohelper.GetSession();
         defer session.Close()
+        moment_id := vars["moment_id"][0]
+
+        if !SetVideoFlag(moment_id, VideoFlagDelByMe) {
+                return proto.ReturnCodeServerError
+        }
 
         sMoments        := mgohelper.GetCollection(session, "moments")
-        moment_selector := bson.M{"_id":bson.ObjectIdHex(vars["moment_id"][0]),"accid":my_accid}
+        moment_selector := bson.M{"_id":bson.ObjectIdHex(moment_id),"accid":my_accid}
         moment_data     := bson.M{"$set":bson.M{"valid":proto.ValidDeleteByMe}}
         _, moment_err   := sMoments.Upsert(moment_selector, moment_data)
         if moment_err != nil {

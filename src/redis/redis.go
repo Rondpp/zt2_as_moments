@@ -56,3 +56,15 @@ func HGet(query string, field string) (string, int32) {
         }
         return value, proto.ReturnCodeOK
 }
+
+func Publish(channel string, data string) {
+        session := pool.Get()
+        defer session.Close()
+
+        _, err := session.Do("PUBLISH", channel, data)
+        if err != nil {
+                log.Error("publish err: ", err)
+        } else {
+                log.Debug("publish 成功,channel:%s,data:%s", channel, data)
+        }
+}

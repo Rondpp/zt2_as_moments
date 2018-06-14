@@ -190,6 +190,7 @@ func UploadMomentComment(my_accid int64, req proto.CommentReq) int {
                 log.Error(err_insert)
                 return proto.ReturnCodeServerError
         }
+        NotifyNewMessageToMe(commentinfo.AccID)
 
         return proto.ReturnCodeOK
 }
@@ -242,6 +243,7 @@ func UploadCommentComment(my_accid int64, req proto.CommentReq) int  {
                 log.Error(err_insert)
                 return proto.ReturnCodeServerError
         }
+        NotifyNewMessageToMe(commentinfo.AccID)
 
         return proto.ReturnCodeOK
 }

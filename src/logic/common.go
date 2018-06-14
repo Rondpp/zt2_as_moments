@@ -11,6 +11,11 @@ import (
         mgohelper "mongo"
         "conf"
 )
+const (
+        VideoFlagCheckNoPass = -1
+        VideoFlagDelByAdmin  = -2
+        VideoFlagDelByMe     = -3
+)
 
 func CheckUrlParm(r *http.Request, parms ...string) int {
         vars := r.URL.Query();
@@ -34,11 +39,9 @@ func CheckUrlParm(r *http.Request, parms ...string) int {
 func CheckToken(r *http.Request) int {
         log.Debug("玩家header:accid:%s,token:%s", r.Header["Accid"], r.Header["Token"])
 
-
         if  len(r.Header["Accid"]) == 0 {
                 return proto.ReturnCodeMissHeader
         }
-
 
         if  len(r.Header["Accid"][0]) == 0 || r.Header["Accid"][0] == "0" {
                 return proto.ReturnCodeMissHeader
@@ -218,4 +221,30 @@ func GetPermissionByAccID(accid int64) int64 {
                 log.Debug(err)
         }
         return userinfo_in_mgo.Permission
+}
+
+func SetVideoFlag(moment_id string, flag int) bool {
+
+        videoId := GetVideoByID(moment_id)
+        if len(videoId) == 0 {
+                return false
+        }
+
+        var url string = conf.GetCfg().VideoCheckUrl + "type=update_video_info"
+        url += "&videoId=" + videoId
+        url += "&category=" + strconv.Itoa(flag)
+        request, _ := http.NewRequest("GET", url, nil)
+
+        log.Debug(url)
+        var client = &http.Client{}
+        rsp, _ := client.Do(request)
+
+        defer rsp.Body.Close()
+        if rsp.StatusCode == 200 {
+                log.Debug("管理视频成功:videoId:%s,标记:%d", videoId, flag)
+                return true
+        } else {
+              log.Debug("管理视频失败:videoId:%s,标记:%d", videoId, flag)
+              return false
+        }
 }

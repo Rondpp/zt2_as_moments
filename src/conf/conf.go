@@ -33,6 +33,7 @@ type Config struct {
         LogCfgName      string          `xml:"log_cfg_name"`
         TokenLastTime   uint32          `xml:"token_last_time"`
         AdminUser       AdminUser       `xml:"admin_user"`
+        VideoCheckUrl   string          `xml:"video_check_url"`
 }
 
 type AdminUser struct {

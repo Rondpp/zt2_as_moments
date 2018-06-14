@@ -6,9 +6,25 @@ import (
         log "github.com/jeanphorn/log4go"
         "gopkg.in/mgo.v2"
         "gopkg.in/mgo.v2/bson"
+        "encoding/json"
         mgohelper "mongo"
+        redishelper "redis"
         "conf"
 )
+
+func NotifyNewMessageToMe(accid int64) {
+        type  Data  struct {
+                Type     int     `json:"type"`
+                AccID    int64   `json:"accid"`
+        }
+        data :=  Data {
+                Type : 1,
+                AccID : accid,
+        }
+
+        json_data, _ := json.Marshal(data)
+        redishelper.Publish("moments", string(json_data))
+}
 
 func GetCommentMeRsp(my_accid int64, start_id string, limit_num int) *[]proto.MessageCommentMeRet {
         if limit_num == 0 {
@@ -150,3 +166,4 @@ func HasUnReadMesssage(r *http.Request) (interface {}) {
         }
         return &rsp
 }
+

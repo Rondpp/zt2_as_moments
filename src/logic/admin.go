@@ -224,18 +224,25 @@ func UploadAdminDeleteRsp(r *http.Request) (int)  {
                 selector    = bson.M{"_id" :bson.ObjectIdHex(moment_id)}
                 coll = mgohelper.GetCollection(session, "moments")
                 log.Debug("管理员删除动态,moment_id:%d", moment_id)
+                commented_accid :=  GetMomentOwnerByID(moment_id)
 
                 comment_mgo.MomentID       = bson.ObjectIdHex(moment_id)
-                comment_mgo.CommentedAccID = GetMomentOwnerByID(moment_id)
+                comment_mgo.CommentedAccID = commented_accid
+                if !SetVideoFlag(moment_id, VideoFlagDelByAdmin) {
+                        return proto.ReturnCodeServerError
+                }
+                NotifyNewMessageToMe(commented_accid)
 
         } else if comment_id != "" {
                 selector    = bson.M{"_id" :bson.ObjectIdHex(comment_id)}
                 coll = mgohelper.GetCollection(session, "comments")
                 log.Debug("管理员删除评论,comment_id:%d", comment_id)
+                commented_accid := GetCommentOwnerByID(comment_id)
 
                 comment_mgo.MomentID       = GetMomentIDByCommentID(comment_id)
                 comment_mgo.CommentID      = bson.ObjectIdHex(comment_id)
-                comment_mgo.CommentedAccID = GetCommentOwnerByID(comment_id)
+                comment_mgo.CommentedAccID = commented_accid
+                NotifyNewMessageToMe(commented_accid)
 
         } else {
                 return proto.ReturnCodeMissParm
@@ -323,6 +330,9 @@ func  UploadAdminCheckMomentsRsp(r *http.Request) (int) {
         var moment_data interface{}
         if pass == 0 {
                 moment_data = bson.M{"$set":bson.M{"valid":proto.ValidDeleteByAdmin}}
+                if !SetVideoFlag(moment_id, VideoFlagCheckNoPass) {
+                        return proto.ReturnCodeServerError
+                }
         } else {
                 moment_data = bson.M{"$set":bson.M{"valid":proto.ValidOK}}
         }
