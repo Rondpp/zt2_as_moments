@@ -164,6 +164,7 @@ func HasUnReadMesssage(r *http.Request) (interface {}) {
         } else {
                 rsp.UnRead = true
         }
+        log.Debug("accid:%d,unread:%d", my_accid, rsp.UnRead)
         return &rsp
 }
 

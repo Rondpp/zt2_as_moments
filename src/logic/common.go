@@ -237,9 +237,13 @@ func SetVideoFlag(moment_id string, flag int) bool {
 
         log.Debug(url)
         var client = &http.Client{}
-        rsp, _ := client.Do(request)
+        rsp, err := client.Do(request)
 
         defer rsp.Body.Close()
+        if err != nil {
+              log.Debug("管理视频失败:videoId:%s,标记:%d,http error", videoId, flag, err)
+              return false
+        }
         if rsp.StatusCode == 200 {
                 log.Debug("管理视频成功:videoId:%s,标记:%d", videoId, flag)
                 return true

@@ -52,8 +52,15 @@ curl   -H "token:token10002" -H "accid:10002" -d ""  "http://47.98.246.74:8002/l
 #评论 
 curl   -H "token:token10002" -H "accid:10002" -d '{"moment_id":"5aeef754e71e163e45d6e83a","ref_comment_id":2,"content":"我的评论2"}'  "http://47.98.246.74:8002/comment/?"
 
-#获取评论 
+#获取动态的评论 
 curl   -H "token:token10002" -H "accid:10002"   "http://47.98.246.74:8002/comment/?moment_id=5aeef754e71e163e45d6e83a&start_id=&num=10"
+
+#获取评论的评论
+curl   -H "token:token10002" -H "accid:10002"   "http://47.98.246.74:8002/comment/?comment_id=5aeef754e71e163e45d6e83a&start_id=&num=10"
+
+#获取单个评论
+curl   -H "token:token10002" -H "accid:10002"   "http://47.98.246.74:8002/comment/?comment_id=5aeef754e71e163e45d6e83a"
+
 
 #获取我相关的评论
 curl   -H "token:token10001" -H "accid:10001"   "http://47.98.246.74:8002/message/?type=1&start_id=&num=10"

@@ -313,13 +313,26 @@ func GetCommentRsp(r *http.Request) (interface {}, int)  {
                 if comment_id == "" {
                         return nil, proto.ReturnCodeParmWrong
                 }
-
-                rsp := GetCommentComment(my_accid, comment_id, start_id, limit_num)
+                _, ok := vars["start_id"]
+                var rsp interface {}
+                if ok {
+                        rsp = GetCommentComment(my_accid, comment_id, start_id, limit_num)
+                } else {
+                        rsp = GetComment(my_accid, comment_id)
+                }
                 return rsp, proto.ReturnCodeOK
 
         } else {
                 return nil, proto.ReturnCodeMissParm
         }
+}
+
+func GetComment(my_accid int64, comment_id string) (interface {})  {
+        comment_mgo := GetCommentByID(comment_id)
+
+        var comment_ret proto.CommentRet
+        CommentMgoToRet(my_accid, comment_mgo, &comment_ret)
+        return &comment_ret
 }
 
 func  DeleteCommentRsp(r *http.Request) (int) {
