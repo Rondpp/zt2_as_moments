@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	VideoFlagCheckPass   = 1
-    VideoFlagWaitForCheck = 2
-	VideoFlagCheckNoPass = -1
-	VideoFlagDelByAdmin  = -2
-	VideoFlagDelByMe     = -3
+	VideoFlagCheckPass    = 1
+	VideoFlagWaitForCheck = 2
+	VideoFlagCheckNoPass  = -1
+	VideoFlagDelByAdmin   = -2
+	VideoFlagDelByMe      = -3
 )
 
 func CheckUrlParm(r *http.Request, parms ...string) int {
