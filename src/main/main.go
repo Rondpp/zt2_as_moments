@@ -1,33 +1,20 @@
-package main 
+package main
 
 import (
-        log "github.com/jeanphorn/log4go"
-        "net/http"
-        "fmt"
-        "flag"
-        "conf"
-        "router"
+	"conf"
+	log "github.com/jeanphorn/log4go"
+	"net/http"
+	"router"
 )
 
-func  main() {
-        var cfg_name string
-        flag.StringVar(&cfg_name, "c", "conf/conf.xml", "set confuration `file`")
+func main() {
+	log.LoadConfiguration(conf.GetCfg().LogCfgName, "xml")
 
-        if conf.Init(cfg_name) {
-                fmt.Printf("读取配置%s成功\n", cfg_name)
-        } else {
-                fmt.Printf("读取配置%s失败\n", cfg_name)
-                return
-        }
+	log.Info("初始化log成功")
 
-        log.LoadConfiguration(conf.GetCfg().LogCfgName, "xml")
+	router.InitRouter()
 
-        log.Info("初始化log成功")
+	defer log.Close()
 
-        router.InitRouter()
-
-        defer log.Close()
-
-        http.ListenAndServe(conf.GetCfg().ServerCfg.Host + ":" + conf.GetCfg().ServerCfg.Port, nil)
+	http.ListenAndServe(conf.GetCfg().ServerCfg.Host+":"+conf.GetCfg().ServerCfg.Port, nil)
 }
-

@@ -320,6 +320,7 @@ func UploadMomentRsp(r *http.Request) (*proto.MomentRet, int) {
 	if len(req.Content) == 0 && len(req.Pic) == 0 && len(req.Video) == 0 {
 		return nil, proto.ReturnCodeMissParm
 	}
+	SensitiveWordsReplace(&(req.Content))
 
 	my_accid := GetMyAccID(r)
 

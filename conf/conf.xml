@@ -21,4 +21,5 @@
         </admin_user>
         <token_last_time>86400</token_last_time>
         <video_check_url>http://zt2zs.ztgame.com/info/vod?/</video_check_url>
+        <sensitive_words_file>conf/sensitive_words.txt</sensitive_words_file>
 </config>

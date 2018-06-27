@@ -119,6 +119,12 @@ func UpdateUserInfoRsp(r *http.Request) (*proto.UserInfoRet, int) {
 		return nil, proto.ReturnCodeMissParm
 	}
 
+	if SensitiveWordsReplace(&(req.Name)) {
+		var rsp proto.UserInfoRet
+		rsp.Name = "名字包含敏感词:" + req.Name
+		return &rsp, proto.ReturnCodeSensitiveWords
+	}
+
 	my_accid := GetMyAccID(r)
 	session := mgohelper.GetSession()
 	defer session.Close()
